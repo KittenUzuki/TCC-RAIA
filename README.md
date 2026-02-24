@@ -1,66 +1,97 @@
-#Nome do Projeto
+# Nome APP
+Aplicativo mobile para gerenciar alimentos em casa, permitindo cadastrar produtos, controlar o estoque e receber sugestões de receitas com base nos itens disponíveis.
 
-Breve descrição (aquela de até 300 caracteres).
+# Objetivo
 
-Objetivo
+Muitas pessoas não possuem controle sobre os alimentos armazenados em casa, o que gera desperdício, compras repetidas e dificuldade para decidir o que cozinhar.
+O objetivo do projeto é facilitar o gerenciamento doméstico e reduzir o desperdício de alimentos por meio de tecnologia.
 
-Explicar o problema:
-
-Reduzir desperdício de alimentos e facilitar a escolha de receitas com base nos itens disponíveis na residência.
-
-Tecnologias Utilizadas
-
-Flutter (App Mobile)
-
-C# – ASP.NET Web API
-
-Python (Módulo de IA)
-
-Banco de Dados (definir qual será usado)
-
-Arquitetura
-
-Explique em poucas linhas:
-
-Flutter → API C# → Banco
-API C# → Serviço Python (IA) → Retorno de receitas
-
-Funcionalidades
+# Funcionalidades
 
 Cadastro manual de alimentos
 
-Controle de validade
+Cadastro a partir de QR Code ou foto da nota fiscal
 
-Visualização de estoque
+Controle de quantidade e validade
 
-Sugestão automática de receitas
+Visualização do estoque disponível
 
-Equipe
+Sugestão automática de receitas com base nos itens cadastrados
 
-Irineu Henrique Santos Silva
+# Tecnologias Utilizadas
 
-Matheus Ferreira Fagundes
+Mobile
 
-Yasmin Victoria Lopes da Silva
+Flutter (Dart)
 
-Como executar
+Backend
 
-Separar por partes:
+C# – ASP.NET Web API
 
+Inteligência Artificial
+
+Python (recomendação de receitas)
+
+Banco de Dados
+
+(Definir: SQL Server, SQLite, PostgreSQL, etc.)
+
+# Arquitetura do Sistema
+Flutter (App Mobile)
+        ->
+     API C# (ASP.NET)
+        ->
+   Banco de Dados
+        ->
+ Serviço Python (IA)
+        ->
+Sugestões de Receitas
+# Equipe
+
+### Irineu Henrique Santos Silva
+
+### Matheus Ferreira Fagundes
+
+### Yasmin Victoria Lopes da Silva
+
+Projeto desenvolvido como Trabalho de Conclusão de Curso – COTUCA 2026.
+
+# Como Executar o Projeto
 Backend (C#)
 
-Como rodar
+Abrir a pasta da API no Visual Studio ou VS Code
 
-Porta usada
+Restaurar dependências
 
-IA (Python)
+Executar o projeto
 
-Como iniciar serviço
+A API será iniciada em:
 
-App (Flutter)
+http://localhost:porta
+Serviço de IA (Python)
 
-Comando para rodar
+Acessar a pasta do serviço
 
-Status do Projeto
+Instalar dependências:
 
-Em desenvolvimento – TCC 2026
+pip install -r requirements.txt
+
+Executar:
+
+python app.py
+App Mobile (Flutter)
+
+Instalar dependências:
+
+flutter pub get
+
+Executar:
+
+flutter run
+# Status do Projeto
+
+Em desenvolvimento — TCC 2026
+
+# Licença
+
+Este projeto está sob a licença MIT. Consulte o arquivo LICENSE para mais informações.
