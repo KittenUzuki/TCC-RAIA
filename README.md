@@ -1,4 +1,4 @@
-Nome do Projeto
+#Nome do Projeto
 
 Breve descrição (aquela de até 300 caracteres).
 
