@@ -57,37 +57,7 @@ Sugestões de Receitas
 Projeto desenvolvido como Trabalho de Conclusão de Curso – COTUCA 2026.
 
 # Como Executar o Projeto
-Backend (C#)
 
-Abrir a pasta da API no Visual Studio ou VS Code
-
-Restaurar dependências
-
-Executar o projeto
-
-A API será iniciada em:
-
-http://localhost:porta
-Serviço de IA (Python)
-
-Acessar a pasta do serviço
-
-Instalar dependências:
-
-pip install -r requirements.txt
-
-Executar:
-
-python app.py
-App Mobile (Flutter)
-
-Instalar dependências:
-
-flutter pub get
-
-Executar:
-
-flutter run
 # Status do Projeto
 
 Em desenvolvimento — TCC 2026
