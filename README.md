@@ -34,7 +34,7 @@ Python (recomendação de receitas)
 
 Banco de Dados
 
-(Definir: SQL Server, SQLite, PostgreSQL, etc.)
+SQL Server
 
 # Arquitetura do Sistema
 Flutter (App Mobile)
