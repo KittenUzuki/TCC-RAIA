@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'screens/home_screen.dart';
+import 'screens/login_screen.dart';
+import 'screens/cadastro_screen.dart';
 
 void main() {
   runApp(RiraApp());
@@ -12,7 +14,15 @@ class RiraApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Rira',
       theme: ThemeData(primarySwatch: Colors.green),
-      home: MainScreen(),
+
+      // 🔥 AGORA COMEÇA PELO LOGIN
+      initialRoute: '/',
+
+      routes: {
+        '/': (context) => LoginScreen(),
+        '/cadastro': (context) => CadastroScreen(),
+        '/main': (context) => MainScreen(),
+      },
     );
   }
 }
@@ -47,7 +57,7 @@ class _MainScreenState extends State<MainScreen> {
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
         selectedItemColor: Colors.green,
-        items: [
+        items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
           BottomNavigationBarItem(icon: Icon(Icons.inventory), label: "Estoque"),
           BottomNavigationBarItem(icon: Icon(Icons.restaurant), label: "Receitas"),
