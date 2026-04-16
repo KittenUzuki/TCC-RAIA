@@ -1,14 +1,25 @@
 import 'package:flutter/material.dart';
+
+//widget
+import 'widgets/bottom_nav_bar.dart';
+
+//screens
 import 'screens/home/home_screen.dart';
+
+//auth
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/cadastro_screen.dart';
 import 'screens/auth/esqueci_senha_screen.dart';
 import 'screens/auth/nova_senha_screen.dart';
+
+//perfil
 import 'screens/perfil/perfil_screen.dart';
-import 'screens/receitas/receitas_screen.dart';
-import 'screens/receitas/detalhe_receita_screen.dart';
-import 'screens/receitas/receitas_favoritas_screen.dart';
-import 'screens/estoque/add_ingredientes_screen.dart';
+
+//import 'screens/receitas/receitas_screen.dart';
+//import 'screens/receitas/detalhe_receita_screen.dart';
+//import 'screens/receitas/receitas_favoritas_screen.dart';
+
+//import 'screens/estoque/add_ingredientes_screen.dart';
 
 void main() {
   runApp(RiraApp());
@@ -44,11 +55,11 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
 
-  final List<Widget> _screens = [
+    final List<Widget> _screens = [
     HomeScreen(),
     Center(child: Text("Estoque")),
     Center(child: Text("Receitas")),
-    Center(child: Text("Perfil")),
+    PerfilScreen(),
   ];
 
   void _onItemTapped(int index) {
@@ -61,17 +72,9 @@ class _MainScreenState extends State<MainScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(child: _screens[_selectedIndex]),
-      bottomNavigationBar: BottomNavigationBar(
+      bottomNavigationBar: CustomBottomNavBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
-        selectedItemColor: Colors.green,
-        type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-          BottomNavigationBarItem(icon: Icon(Icons.inventory), label: "Estoque"),
-          BottomNavigationBarItem(icon: Icon(Icons.restaurant), label: "Receitas"),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Perfil"),
-        ],
       ),
     );
   }
