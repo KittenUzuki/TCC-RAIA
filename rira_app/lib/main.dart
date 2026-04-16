@@ -1,25 +1,26 @@
 import 'package:flutter/material.dart';
 
-//widget
+// widget
 import 'widgets/bottom_nav_bar.dart';
 
-//screens
+// screens
 import 'screens/home/home_screen.dart';
 
-//auth
+// auth
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/cadastro_screen.dart';
 import 'screens/auth/esqueci_senha_screen.dart';
 import 'screens/auth/nova_senha_screen.dart';
 
-//perfil
+// perfil
 import 'screens/perfil/perfil_screen.dart';
 
-//import 'screens/receitas/receitas_screen.dart';
-//import 'screens/receitas/detalhe_receita_screen.dart';
-//import 'screens/receitas/receitas_favoritas_screen.dart';
+//estoque
+import 'screens/estoque/add_ingredientes_screen.dart';
+import 'screens/estoque/estoque_screen.dart';
 
-//import 'screens/estoque/add_ingredientes_screen.dart';
+//receitas
+import 'screens/receitas/receitas_screen.dart';
 
 void main() {
   runApp(RiraApp());
@@ -34,6 +35,7 @@ class RiraApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.green,
         scaffoldBackgroundColor: Color(0xFFF5F2EE),
+        useMaterial3: true,
       ),
       initialRoute: '/',
       routes: {
@@ -55,10 +57,11 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
 
-    final List<Widget> _screens = [
+  //telas da barra de navegação
+  final List<Widget> _screens = [
     HomeScreen(),
-    Center(child: Text("Estoque")),
-    Center(child: Text("Receitas")),
+    EstoqueScreen(),
+    ReceitasScreen(),
     PerfilScreen(),
   ];
 
@@ -68,10 +71,68 @@ class _MainScreenState extends State<MainScreen> {
     });
   }
 
+  // MENU DE OPÇÕES
+  void _mostrarOpcoes(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                "Adicionar Ingrediente",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+
+              SizedBox(height: 20),
+
+              _buildOpcao(Icons.mic, "Por voz", () {}),
+              _buildOpcao(Icons.receipt, "Foto da nota", () {}),
+              _buildOpcao(Icons.qr_code, "QR Code da nota", () {}),
+              _buildOpcao(Icons.edit, "Manual", () {
+                Navigator.pop(context); // fecha o menu
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => AddIngredientesScreen(),
+                  ),
+                );
+              }),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  //BOTÃO REUTILIZÁVEL
+  Widget _buildOpcao(IconData icon, String texto, VoidCallback onTap) {
+    return ListTile(
+      leading: Icon(icon, color: Colors.green),
+      title: Text(texto),
+      onTap: onTap,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(child: _screens[_selectedIndex]),
+
+      // BOTÃO FLUTUANTE
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _mostrarOpcoes(context),
+        backgroundColor: Colors.green,
+        child: Icon(Icons.add),
+      ),
+
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+
       bottomNavigationBar: CustomBottomNavBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,

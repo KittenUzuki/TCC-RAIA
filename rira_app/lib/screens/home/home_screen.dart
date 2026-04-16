@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:rira_app/screens/receitas/receitas_screen.dart';
+
+// estoque
+import '../estoque/add_ingredientes_screen.dart';
+import '../estoque/estoque_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   final List<String> itens = [
@@ -40,9 +45,34 @@ class HomeScreen extends StatelessWidget {
 
               SizedBox(height: 20),
 
-              buildButton("Adicionar alimento"),
-              buildButton("Ver estoque"),
-              buildButton("Ver receitas"),
+              buildButton("Adicionar alimento", () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => AddIngredientesScreen(),
+                  ),
+                );
+              }),
+
+            //estoque
+             buildButton("Ver estoque", () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => EstoqueScreen(),
+                  ),
+                );
+              }),
+
+              //receitas
+              buildButton("Ver Receitas", () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ReceitasScreen(),
+                  ),
+                );
+              }),
 
               SizedBox(height: 20),
 
@@ -57,11 +87,12 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget buildButton(String text) {
+   
+  Widget buildButton(String text, VoidCallback onPressed) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: ElevatedButton(
-        onPressed: () {},
+        onPressed: onPressed,
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.green,
           minimumSize: Size(double.infinity, 45),

@@ -46,13 +46,13 @@ class LoginScreen extends StatelessWidget {
                 ),
 
                 SizedBox(height: 8),
-
+                
                 GestureDetector(
                   onTap: () {
                     Navigator.pushNamed(context, '/esqueciSenha');
                   },
                   child: Text("Esqueceu a senha?"),
-                )
+                ),
 
                 SizedBox(height: 20),
 
