@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
 // widget
 import 'widgets/bottom_nav_bar.dart';
@@ -22,7 +24,11 @@ import 'screens/estoque/estoque_screen.dart';
 //receitas
 import 'screens/receitas/receitas_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(RaiaApp());
 }
 
