@@ -20,32 +20,25 @@ Sugestão automática de receitas com base nos itens cadastrados
 
 # Tecnologias Utilizadas
 
-Mobile
-
-Flutter (Dart)
-
-Backend
-
-C# – ASP.NET Web API
-
-Inteligência Artificial
-
-Python (recomendação de receitas)
-
-Banco de Dados
-
-SQL Server
+*   **Mobile:** Flutter (Dart)
+*   **Backend & Banco de Dados:** Firebase (Firestore, Firebase Authentication)
+*   **Inteligência Artificial:** Python (recomendação de receitas)
 
 # Arquitetura do Sistema
-Flutter (App Mobile)
-        ->
-     API C# (ASP.NET)
-        ->
-   Banco de Dados
-        ->
- Serviço Python (IA)
-        ->
-Sugestões de Receitas
+
+A nova arquitetura simplificada do sistema é a seguinte:
+
+*   **Aplicativo Mobile (Flutter):** O aplicativo se comunica diretamente com os serviços do Firebase para autenticação e armazenamento de dados.
+*   **Firebase (Backend-as-a-Service):**
+    *   **Firestore:** Atua como o banco de dados NoSQL principal, armazenando informações de usuários, inventários e receitas.
+    *   **Firebase Authentication:** Gerencia o login e a segurança dos usuários.
+*   **Serviço de IA (Python):** Um serviço separado que consome os dados do inventário (possivelmente via uma Cloud Function) para gerar e sugerir receitas.
+
+    Flutter (App Mobile) <-> Firebase (Backend & DB)
+           |
+           V
+    Serviço Python (IA) -> Sugestões de Receitas
+
 # Equipe
 
 ### Irineu Henrique Santos Silva

@@ -23,15 +23,15 @@ import 'screens/estoque/estoque_screen.dart';
 import 'screens/receitas/receitas_screen.dart';
 
 void main() {
-  runApp(RiraApp());
+  runApp(RaiaApp());
 }
 
-class RiraApp extends StatelessWidget {
+class RaiaApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Rira',
+      title: 'Raia',
       theme: ThemeData(
         primarySwatch: Colors.green,
         scaffoldBackgroundColor: Color(0xFFF5F2EE),

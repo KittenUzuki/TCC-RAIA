@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:rira_app/screens/receitas/receitas_screen.dart';
+import 'package:raia_app/screens/receitas/receitas_screen.dart';
 
 // estoque
 import '../estoque/add_ingredientes_screen.dart';
@@ -26,7 +26,7 @@ class HomeScreen extends StatelessWidget {
             children: [
               SizedBox(height: 10),
 
-              Text("Rira",
+              Text("Raia",
                   style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
 
               Text("Sua cozinha inteligente"),
