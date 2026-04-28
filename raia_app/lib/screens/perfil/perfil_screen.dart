@@ -3,14 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-// 1. Convertido para StatefulWidget para poder carregar e gerenciar dados.
 class PerfilScreen extends StatefulWidget {
   @override
   _PerfilScreenState createState() => _PerfilScreenState();
 }
 
 class _PerfilScreenState extends State<PerfilScreen> {
-  // Variáveis para guardar os dados do usuário e o estado de carregamento
   bool _isLoading = true;
   String? _nome;
   String? _email;
@@ -21,47 +19,55 @@ class _PerfilScreenState extends State<PerfilScreen> {
   @override
   void initState() {
     super.initState();
-    // 2. Chama a função para buscar os dados assim que a tela é iniciada.
     _fetchUserData();
   }
 
-  // 3. Função assíncrona para buscar os dados no Firebase.
   Future<void> _fetchUserData() async {
-    // Pega o usuário atualmente logado no Authentication.
     final user = FirebaseAuth.instance.currentUser;
 
     if (user != null) {
       try {
-        // Usa o ID do usuário para encontrar o documento correspondente no Firestore.
         final docSnapshot = await FirebaseFirestore.instance.collection('usuarios').doc(user.uid).get();
 
         if (docSnapshot.exists) {
-          // Se o documento existe, atualiza as variáveis e os controladores.
-          setState(() {
-            _nome = docSnapshot.data()?['nome'];
-            _email = docSnapshot.data()?['email'];
-            nomeController.text = _nome ?? '';
-            emailController.text = _email ?? '';
-          });
+          if (context.mounted) {
+             setState(() {
+              _nome = docSnapshot.data()?['nome'];
+              _email = docSnapshot.data()?['email'];
+              nomeController.text = _nome ?? '';
+              emailController.text = _email ?? '';
+            });
+          }
         }
       } catch (e) {
-        // Em caso de erro, exibe uma mensagem.
+         if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text("Erro ao buscar dados do usuário: $e")),
+            );
+         }
+      }
+    }
+    if (context.mounted) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+  
+  Future<void> _logout() async {
+    try {
+      await FirebaseAuth.instance.signOut();
+      // A CORREÇÃO ESTÁ AQUI:
+      if (context.mounted) {
+        Navigator.of(context).pushNamedAndRemoveUntil('/login', (Route<dynamic> route) => false);
+      }
+    } catch (e) {
+      if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Erro ao buscar dados do usuário: $e")),
+          SnackBar(content: Text("Erro ao fazer logout: $e")),
         );
       }
     }
-    // Define que o carregamento terminou.
-    setState(() {
-      _isLoading = false;
-    });
-  }
-  
-  // 4. Função para fazer o logout.
-  Future<void> _logout() async {
-    await FirebaseAuth.instance.signOut();
-    // Leva o usuário de volta para a tela de login e remove todas as outras telas da pilha.
-    Navigator.of(context).pushNamedAndRemoveUntil('/login', (Route<dynamic> route) => false);
   }
 
   @override
@@ -70,7 +76,6 @@ class _PerfilScreenState extends State<PerfilScreen> {
 
     return Scaffold(
       backgroundColor: Color(0xFFF5F2EE),
-      // 5. Se estiver carregando, mostra um indicador de progresso, senão, mostra os dados.
       body: _isLoading
           ? Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
@@ -92,7 +97,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
                     SizedBox(height: 20),
                     TextField(
                       controller: nomeController,
-                      readOnly: true, // Por enquanto, apenas leitura.
+                      readOnly: true,
                       decoration: InputDecoration(
                         labelText: "Nome",
                         border: OutlineInputBorder(
@@ -103,7 +108,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
                     SizedBox(height: 15),
                     TextField(
                       controller: emailController,
-                      readOnly: true, // Apenas leitura.
+                      readOnly: true,
                       decoration: InputDecoration(
                         labelText: "Email",
                         border: OutlineInputBorder(
@@ -112,7 +117,6 @@ class _PerfilScreenState extends State<PerfilScreen> {
                       ),
                     ),
                     SizedBox(height: 30),
-                    // 6. Botão de SAIR agora é clicável e chama a função _logout.
                     InkWell(
                       onTap: _logout,
                       child: Row(
