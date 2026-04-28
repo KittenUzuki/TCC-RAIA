@@ -1,6 +1,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class CadastroScreen extends StatelessWidget {
   final nomeController = TextEditingController();
@@ -9,27 +10,33 @@ class CadastroScreen extends StatelessWidget {
   final confirmarController = TextEditingController();
 
   void _cadastrarUsuario(BuildContext context) async {
-    // 1. Verificar se as senhas coincidem
     if (senhaController.text != confirmarController.text) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('As senhas não coincidem!')),
       );
-      return; 
+      return;
     }
 
-    // 2. Tentar criar o usuário no Firebase
     try {
-      await FirebaseAuth.instance.createUserWithEmailAndPassword(
+      // 1. Criar o usuário no Firebase Authentication
+      UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: emailController.text.trim(),
         password: senhaController.text.trim(),
       );
-      
+
+      // 2. Após criar o usuário, criar seu documento na coleção 'usuarios' do Firestore
+      if (userCredential.user != null) {
+        await FirebaseFirestore.instance.collection('usuarios').doc(userCredential.user!.uid).set({
+          'nome': nomeController.text,
+          'email': emailController.text.trim(),
+          'dataCriacao': Timestamp.now(), // Traduzindo 'DataCriacao'
+        });
+      }
+
       if (context.mounted) {
-        // EXIBE A MENSAGEM DE SUCESSO
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Cadastro realizado com sucesso!')),
         );
-        // Navega para a tela principal após um curto intervalo
         Future.delayed(const Duration(seconds: 1), () {
           if (context.mounted) {
             Navigator.pushReplacementNamed(context, '/main');
@@ -68,7 +75,7 @@ class CadastroScreen extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(
+                 Text(
                   "Criar Conta",
                   style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
                 ),
