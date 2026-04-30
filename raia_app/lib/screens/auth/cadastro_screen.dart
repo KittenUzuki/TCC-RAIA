@@ -2,34 +2,41 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:raia_app/screens/main_screen.dart';
 
-class CadastroScreen extends StatelessWidget {
+class CadastroScreen extends StatefulWidget {
+  @override
+  _CadastroScreenState createState() => _CadastroScreenState();
+}
+
+class _CadastroScreenState extends State<CadastroScreen> {
+  final _formKey = GlobalKey<FormState>();
   final nomeController = TextEditingController();
   final emailController = TextEditingController();
   final senhaController = TextEditingController();
   final confirmarController = TextEditingController();
+  bool _isLoading = false;
 
-  void _cadastrarUsuario(BuildContext context) async {
-    if (senhaController.text != confirmarController.text) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('As senhas não coincidem!')),
-      );
+  Future<void> _cadastrarUsuario() async {
+    if (!_formKey.currentState!.validate()) {
       return;
     }
 
+    setState(() {
+      _isLoading = true;
+    });
+
     try {
-      // 1. Criar o usuário no Firebase Authentication
       UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: emailController.text.trim(),
         password: senhaController.text.trim(),
       );
 
-      // 2. Após criar o usuário, criar seu documento na coleção 'usuarios' do Firestore
       if (userCredential.user != null) {
         await FirebaseFirestore.instance.collection('usuarios').doc(userCredential.user!.uid).set({
-          'nome': nomeController.text,
+          'nome': nomeController.text.trim(),
           'email': emailController.text.trim(),
-          'dataCriacao': Timestamp.now(), // Traduzindo 'DataCriacao'
+          'dataCriacao': FieldValue.serverTimestamp(),
         });
       }
 
@@ -37,103 +44,88 @@ class CadastroScreen extends StatelessWidget {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Cadastro realizado com sucesso!')),
         );
-        Future.delayed(const Duration(seconds: 1), () {
-          if (context.mounted) {
-            Navigator.pushReplacementNamed(context, '/main');
-          }
-        });
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => MainScreen()),
+          (route) => false,
+        );
       }
 
     } on FirebaseAuthException catch (e) {
       String mensagemErro = 'Ocorreu um erro desconhecido.';
       if (e.code == 'weak-password') {
-        mensagemErro = 'A senha fornecida é muito fraca (mínimo 6 caracteres).';
+        mensagemErro = 'A senha deve ter no mínimo 6 caracteres.';
       } else if (e.code == 'email-already-in-use') {
-        mensagemErro = 'O e-mail fornecido já está em uso.';
+        mensagemErro = 'Este e-mail já está em uso por outra conta.';
       } else if (e.code == 'invalid-email') {
         mensagemErro = 'O formato do e-mail é inválido.';
       }
-      
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(mensagemErro)),
         );
+      }
+    } finally {
+      if (context.mounted) {
+        setState(() {
+          _isLoading = false;
+        });
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final largura = MediaQuery.of(context).size.width;
-
     return Scaffold(
-      appBar: AppBar(elevation: 0, backgroundColor: Colors.transparent, leading: BackButton(color: Colors.black)),
+      appBar: AppBar(elevation: 0, backgroundColor: Colors.transparent),
       body: Center(
         child: SingleChildScrollView(
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: largura * 0.08),
+          padding: const EdgeInsets.all(16.0),
+          child: Form(
+            key: _formKey,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                 Text(
-                  "Criar Conta",
-                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-                ),
+                Text("Criar Conta", style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold)),
                 SizedBox(height: 30),
-                TextField(
+                TextFormField(
                   controller: nomeController,
-                  decoration: InputDecoration(
-                    labelText: "Nome",
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
+                  decoration: InputDecoration(labelText: "Nome"),
+                  validator: (value) => value!.isEmpty ? 'Campo obrigatório' : null,
                 ),
                 SizedBox(height: 15),
-                TextField(
+                TextFormField(
                   controller: emailController,
                   keyboardType: TextInputType.emailAddress,
-                  decoration: InputDecoration(
-                    labelText: "Email",
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
+                  decoration: InputDecoration(labelText: "Email"),
+                  validator: (value) => value!.isEmpty ? 'Campo obrigatório' : null,
                 ),
                 SizedBox(height: 15),
-                TextField(
+                TextFormField(
                   controller: senhaController,
                   obscureText: true,
-                  decoration: InputDecoration(
-                    labelText: "Senha",
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
+                  decoration: InputDecoration(labelText: "Senha"),
+                   validator: (value) => value!.length < 6 ? 'Mínimo 6 caracteres' : null,
                 ),
                 SizedBox(height: 15),
-                TextField(
+                TextFormField(
                   controller: confirmarController,
                   obscureText: true,
-                  decoration: InputDecoration(
-                    labelText: "Confirmar Senha",
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
+                  decoration: InputDecoration(labelText: "Confirmar Senha"),
+                   validator: (value) {
+                    if (value != senhaController.text) {
+                      return 'As senhas não coincidem';
+                    }
+                    return null;
+                  },
                 ),
-                SizedBox(height: 20),
-                ElevatedButton(
-                  onPressed: () => _cadastrarUsuario(context),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    minimumSize: Size(double.infinity, 45),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: Text("Confirmar", style: TextStyle(color: Colors.white)),
-                ),
+                SizedBox(height: 25),
+                _isLoading
+                    ? Center(child: CircularProgressIndicator())
+                    : ElevatedButton(
+                        onPressed: _cadastrarUsuario,
+                        child: Text("Confirmar"),
+                      ),
               ],
             ),
           ),

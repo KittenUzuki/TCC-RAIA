@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:raia_app/screens/auth/login_screen.dart';
 
 class PerfilScreen extends StatefulWidget {
   @override
@@ -24,27 +25,27 @@ class _PerfilScreenState extends State<PerfilScreen> {
 
   Future<void> _fetchUserData() async {
     final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      setState(() => _isLoading = false);
+      return;
+    }
 
-    if (user != null) {
-      try {
-        final docSnapshot = await FirebaseFirestore.instance.collection('usuarios').doc(user.uid).get();
+    try {
+      final docSnapshot = await FirebaseFirestore.instance.collection('usuarios').doc(user.uid).get();
 
-        if (docSnapshot.exists) {
-          if (context.mounted) {
-             setState(() {
-              _nome = docSnapshot.data()?['nome'];
-              _email = docSnapshot.data()?['email'];
-              nomeController.text = _nome ?? '';
-              emailController.text = _email ?? '';
-            });
-          }
-        }
-      } catch (e) {
-         if (context.mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text("Erro ao buscar dados do usuário: $e")),
-            );
-         }
+      if (docSnapshot.exists && context.mounted) {
+        setState(() {
+          _nome = docSnapshot.data()?['nome'];
+          _email = user.email; // Pegando o email direto do objeto User
+          nomeController.text = _nome ?? '';
+          emailController.text = _email ?? '';
+        });
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Erro ao buscar dados: $e")),
+        );
       }
     }
     if (context.mounted) {
@@ -53,13 +54,15 @@ class _PerfilScreenState extends State<PerfilScreen> {
       });
     }
   }
-  
+
   Future<void> _logout() async {
     try {
       await FirebaseAuth.instance.signOut();
-      // A CORREÇÃO ESTÁ AQUI:
       if (context.mounted) {
-        Navigator.of(context).pushNamedAndRemoveUntil('/login', (Route<dynamic> route) => false);
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => LoginScreen()),
+          (Route<dynamic> route) => false,
+        );
       }
     } catch (e) {
       if (context.mounted) {
@@ -72,61 +75,43 @@ class _PerfilScreenState extends State<PerfilScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final largura = MediaQuery.of(context).size.width;
-
     return Scaffold(
-      backgroundColor: Color(0xFFF5F2EE),
+      appBar: AppBar(
+        title: Text("Minha Conta"),
+      ),
       body: _isLoading
           ? Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: largura * 0.08),
+          : RefreshIndicator(
+              onRefresh: _fetchUserData,
+              child: SingleChildScrollView(
+                physics: AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(16.0),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    SizedBox(height: 40),
-                    Text(
-                      "Minha Conta",
-                      style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                    ),
                     SizedBox(height: 20),
                     CircleAvatar(
-                      radius: 40,
-                      backgroundColor: Colors.grey[300],
-                      child: Icon(Icons.person, size: 40, color: Colors.grey[700]),
+                      radius: 50,
+                      child: Icon(Icons.person, size: 50),
                     ),
                     SizedBox(height: 20),
-                    TextField(
+                    TextFormField(
                       controller: nomeController,
                       readOnly: true,
-                      decoration: InputDecoration(
-                        labelText: "Nome",
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
+                      decoration: InputDecoration(labelText: "Nome"),
                     ),
-                    SizedBox(height: 15),
-                    TextField(
+                    SizedBox(height: 16),
+                    TextFormField(
                       controller: emailController,
                       readOnly: true,
-                      decoration: InputDecoration(
-                        labelText: "Email",
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
+                      decoration: InputDecoration(labelText: "Email"),
                     ),
-                    SizedBox(height: 30),
-                    InkWell(
-                      onTap: _logout,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          Text("SAIR"),
-                          SizedBox(width: 5),
-                          Icon(Icons.logout),
-                        ],
-                      ),
+                    SizedBox(height: 32),
+                    ElevatedButton.icon(
+                      onPressed: _logout,
+                      icon: Icon(Icons.logout),
+                      label: Text("Sair"),
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
                     ),
                   ],
                 ),
