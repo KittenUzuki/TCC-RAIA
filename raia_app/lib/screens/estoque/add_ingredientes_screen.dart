@@ -1,4 +1,8 @@
+
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 
 class AddIngredientesScreen extends StatefulWidget {
   @override
@@ -6,16 +10,21 @@ class AddIngredientesScreen extends StatefulWidget {
 }
 
 class _AddIngredientesScreenState extends State<AddIngredientesScreen> {
+  final _formKey = GlobalKey<FormState>();
   final nomeController = TextEditingController();
   final quantidadeController = TextEditingController();
-
+  
   DateTime? dataValidade;
+  String? unidadeSelecionada = 'un'; // Valor inicial
+  bool _isLoading = false;
 
-  Future<void> selecionarData(BuildContext context) async {
+  final List<String> unidades = ['un', 'g', 'kg', 'ml', 'L'];
+
+  Future<void> _selecionarData(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
-      firstDate: DateTime(2020),
+      firstDate: DateTime.now(),
       lastDate: DateTime(2100),
     );
 
@@ -26,103 +35,140 @@ class _AddIngredientesScreenState extends State<AddIngredientesScreen> {
     }
   }
 
-  String formatarData(DateTime data) {
-    return "${data.day}/${data.month}/${data.year}";
+  Future<void> _salvarIngrediente() async {
+    if (_formKey.currentState!.validate()) {
+      setState(() {
+        _isLoading = true;
+      });
+
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro: Usuário não autenticado.')),
+        );
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
+
+      try {
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .collection('ingredientes')
+            .add({
+          'nome': nomeController.text,
+          'quantidade': double.parse(quantidadeController.text.replaceAll(',', '.')),
+          'unidade': unidadeSelecionada,
+          'validade': dataValidade,
+          'dataAdicionado': FieldValue.serverTimestamp(),
+        });
+
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Ingrediente salvo com sucesso!')),
+        );
+      } catch (e) {
+        setState(() {
+          _isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao salvar ingrediente: $e')),
+        );
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final largura = MediaQuery.of(context).size.width;
-
     return Scaffold(
       appBar: AppBar(
         title: Text("Adicionar Ingrediente"),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        foregroundColor: Colors.black,
       ),
-      body: Center(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: largura * 0.08),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Form(
+            key: _formKey,
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(
-                  "Novo Ingrediente",
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                ),
-
-                SizedBox(height: 30),
-
-                TextField(
+                TextFormField(
                   controller: nomeController,
-                  decoration: InputDecoration(
-                    labelText: "Nome do ingrediente",
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
+                  decoration: InputDecoration(labelText: "Nome do ingrediente"),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Por favor, insira o nome.';
+                    }
+                    return null;
+                  },
                 ),
-
-                SizedBox(height: 15),
-
-                TextField(
-                  controller: quantidadeController,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    labelText: "Quantidade",
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(8),
+                SizedBox(height: 16),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      flex: 2,
+                      child: TextFormField(
+                        controller: quantidadeController,
+                        decoration: InputDecoration(labelText: "Quantidade"),
+                        keyboardType: TextInputType.numberWithOptions(decimal: true),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Obrigatório';
+                          }
+                          if (double.tryParse(value.replaceAll(',', '.')) == null) {
+                            return 'Número inválido';
+                          }
+                          return null;
+                        },
+                      ),
                     ),
-                  ),
+                    SizedBox(width: 16),
+                    Expanded(
+                      flex: 1,
+                      child: DropdownButtonFormField<String>(
+                        value: unidadeSelecionada,
+                        decoration: InputDecoration(labelText: "Unid."),
+                        items: unidades.map((String unidade) {
+                          return DropdownMenuItem<String>(
+                            value: unidade,
+                            child: Text(unidade),
+                          );
+                        }).toList(),
+                        onChanged: (newValue) {
+                          setState(() {
+                            unidadeSelecionada = newValue;
+                          });
+                        },
+                      ),
+                    ),
+                  ],
                 ),
-
-                SizedBox(height: 15),
-
-                // CAMPO DE DATA
+                SizedBox(height: 16),
                 GestureDetector(
-                  onTap: () => selecionarData(context),
+                  onTap: () => _selecionarData(context),
                   child: Container(
-                    width: double.infinity,
-                    padding: EdgeInsets.symmetric(vertical: 15, horizontal: 12),
+                    padding: const EdgeInsets.symmetric(vertical: 16),
                     decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey),
-                      borderRadius: BorderRadius.circular(8),
+                      border: Border(bottom: BorderSide(color: Colors.grey)),
                     ),
                     child: Text(
                       dataValidade == null
                           ? "Selecionar data de validade (opcional)"
-                          : "Validade: ${formatarData(dataValidade!)}",
-                      style: TextStyle(
-                        color: dataValidade == null
-                            ? Colors.grey
-                            : Colors.black,
+                          : "Validade: ${DateFormat('dd/MM/yyyy').format(dataValidade!)}",
+                      style: TextStyle(fontSize: 16),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 32),
+                _isLoading
+                    ? Center(child: CircularProgressIndicator())
+                    : ElevatedButton(
+                        onPressed: _salvarIngrediente,
+                        child: Text("Salvar"),
                       ),
-                    ),
-                  ),
-                ),
-
-                SizedBox(height: 25),
-
-                ElevatedButton(
-                  onPressed: () {
-                    // AQUI FUTURAMENTE VAI PRO BANCO
-                    print("Nome: ${nomeController.text}");
-                    print("Quantidade: ${quantidadeController.text}");
-                    print("Validade: $dataValidade");
-
-                    Navigator.pop(context);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    minimumSize: Size(double.infinity, 45),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: Text("Salvar"),
-                ),
               ],
             ),
           ),

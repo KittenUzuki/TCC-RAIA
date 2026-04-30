@@ -12,7 +12,6 @@ import 'screens/home/home_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/cadastro_screen.dart';
 import 'screens/auth/esqueci_senha_screen.dart';
-import 'screens/auth/nova_senha_screen.dart';
 
 // perfil
 import 'screens/perfil/perfil_screen.dart';
@@ -49,7 +48,7 @@ class RaiaApp extends StatelessWidget {
         '/cadastro': (context) => CadastroScreen(),
         '/main': (context) => MainScreen(),
         '/esqueciSenha': (context) => EsqueciSenhaScreen(),
-        '/novaSenha': (context) => NovaSenhaScreen(),
+        
       },
     );
   }
