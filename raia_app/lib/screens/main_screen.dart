@@ -57,13 +57,25 @@ class _MainScreenState extends State<MainScreen> {
               _buildOpcao(Icons.mic, "Por voz", () {}),
               _buildOpcao(Icons.receipt, "Foto da nota", () {}),
               _buildOpcao(Icons.qr_code, "QR Code da nota", () {}),
+              // CORREÇÃO APLICADA AQUI
               _buildOpcao(Icons.edit, "Manual", () {
-                Navigator.pop(context); // fecha o menu
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => AddIngredientesScreen(),
+                Navigator.pop(context); // fecha o menu de opções
+                // Abre o formulário em um novo modal (a "telinha pequena")
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true, // Permite que o modal seja mais alto
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
                   ),
+                  builder: (context) {
+                    // Garante que o teclado não cubra o formulário
+                    return Padding(
+                      padding: EdgeInsets.only(
+                        bottom: MediaQuery.of(context).viewInsets.bottom,
+                      ),
+                      child: AddIngredientesScreen(),
+                    );
+                  },
                 );
               }),
             ],
