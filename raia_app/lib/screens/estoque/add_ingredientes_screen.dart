@@ -1,125 +1,196 @@
 
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 
 class AddIngredientesScreen extends StatefulWidget {
-  // Adicionado para receber o ingrediente a ser editado
-  final QueryDocumentSnapshot? ingrediente;
+  final QueryDocumentSnapshot? ingrediente; // Ingrediente para edição
 
   const AddIngredientesScreen({Key? key, this.ingrediente}) : super(key: key);
 
   @override
-  State<AddIngredientesScreen> createState() => _AddIngredientesScreenState();
+  _AddIngredientesScreenState createState() => _AddIngredientesScreenState();
 }
 
 class _AddIngredientesScreenState extends State<AddIngredientesScreen> {
   final _formKey = GlobalKey<FormState>();
-  final nomeController = TextEditingController();
-  final quantidadeController = TextEditingController();
-  
-  DateTime? dataValidade;
-  String? unidadeSelecionada;
+  late TextEditingController _nomeController;
+  late TextEditingController _quantidadeController;
+  DateTime? _dataValidade;
+  String _unidadeSelecionada = 'un'; // Valor padrão
   bool _isLoading = false;
-  bool get _isEditing => widget.ingrediente != null;
+  late bool _isEditing;
 
-  final List<String> unidades = ['un', 'g', 'kg', 'ml', 'L'];
+  final List<String> _unidades = ['un', 'g', 'kg', 'ml', 'L'];
 
   @override
   void initState() {
     super.initState();
-    // Preenche o formulário se um ingrediente foi passado
+    _isEditing = widget.ingrediente != null;
+
+    _nomeController = TextEditingController();
+    _quantidadeController = TextEditingController();
+
     if (_isEditing) {
       final data = widget.ingrediente!.data() as Map<String, dynamic>;
-      nomeController.text = data['nome'] ?? '';
-      quantidadeController.text = (data['quantidade'] ?? 0).toString().replaceAll('.', ',');
-      unidadeSelecionada = data['unidade'] ?? 'un';
-      dataValidade = (data['validade'] as Timestamp?)?.toDate();
-    } else {
-      unidadeSelecionada = 'un';
+      _nomeController.text = data['nome'] ?? '';
+      _quantidadeController.text = (data['quantidade'] ?? '').toString();
+      _unidadeSelecionada = data['unidade'] ?? 'un';
+      final Timestamp? validadeTimestamp = data['validade'];
+      if (validadeTimestamp != null) {
+        _dataValidade = validadeTimestamp.toDate();
+      }
     }
   }
 
-  Future<void> _selecionarData(BuildContext context) async {
+  @override
+  void dispose() {
+    _nomeController.dispose();
+    _quantidadeController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: dataValidade ?? DateTime.now(),
+      initialDate: _dataValidade ?? DateTime.now(),
       firstDate: DateTime(2000),
-      lastDate: DateTime(2100),
+      lastDate: DateTime(2101),
     );
-    if (picked != null && picked != dataValidade) {
+    if (picked != null && picked != _dataValidade) {
       setState(() {
-        dataValidade = picked;
+        _dataValidade = picked;
       });
     }
   }
 
   Future<void> _salvarIngrediente() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (_formKey.currentState!.validate()) {
+      setState(() => _isLoading = true);
 
-    setState(() => _isLoading = true);
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) { /* ... (código de erro) ... */ return; }
-
-    final data = {
-      'nome': nomeController.text,
-      'quantidade': double.parse(quantidadeController.text.replaceAll(',', '.')),
-      'unidade': unidadeSelecionada,
-      'validade': dataValidade != null ? Timestamp.fromDate(dataValidade!) : null,
-      'dataAdicionado': _isEditing ? widget.ingrediente!['dataAdicionado'] : FieldValue.serverTimestamp(),
-    };
-
-    try {
-      final collection = FirebaseFirestore.instance.collection('ingredientes').doc(user.uid).collection('userIngredientes');
-      if (_isEditing) {
-        await collection.doc(widget.ingrediente!.id).update(data);
-      } else {
-        await collection.add(data);
-      }
-
-      if (mounted) {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Ingrediente salvo com sucesso!')),
+          SnackBar(content: Text('Erro: Usuário não autenticado.')),
         );
-        Navigator.pop(context);
+        setState(() => _isLoading = false);
+        return;
       }
-    } catch (e) { /* ... (código de erro) ... */
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+      
+      try {
+        final collection = FirebaseFirestore.instance.collection('ingredientes').doc(user.uid).collection('userIngredientes');
+
+        final data = {
+          'nome': _nomeController.text,
+          'quantidade': int.tryParse(_quantidadeController.text) ?? 0,
+          'unidade': _unidadeSelecionada,
+          'validade': _dataValidade != null ? Timestamp.fromDate(_dataValidade!) : null,
+        };
+
+        if (_isEditing) {
+          await collection.doc(widget.ingrediente!.id).update(data);
+        } else {
+          final dataToCreate = {
+            ...data,
+            'criadoEm': Timestamp.now(),
+          };
+          await collection.add(dataToCreate);
+        }
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Ingrediente salvo com sucesso!')),
+          );
+          Navigator.pop(context);
+        }
+
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Erro ao salvar ingrediente: $e')),
+          );
+        }
+      } finally {
+        if (mounted) setState(() => _isLoading = false);
+      }
     }
   }
 
+
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(24, 24, 24, MediaQuery.of(context).viewInsets.bottom + 24),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                _isEditing ? "Editar Ingrediente" : "Adicionar Ingrediente",
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 24),
-              TextFormField(controller: nomeController, /* ... */ ),
-              SizedBox(height: 16),
-              Row(/* ... (campos de quantidade e unidade) ... */),
-              SizedBox(height: 16),
-              GestureDetector(onTap: () => _selecionarData(context), /* ... (campo de data) ... */),
-              SizedBox(height: 32),
-              _isLoading
-                  ? Center(child: CircularProgressIndicator())
-                  : ElevatedButton(
-                      onPressed: _salvarIngrediente,
-                      child: Text(_isEditing ? "Salvar Alterações" : "Adicionar"),
-                    ),
-            ],
-          ),
+    return Padding(
+      padding: const EdgeInsets.all(20.0),
+      child: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            // CORREÇÃO: Usando headlineSmall em vez do headline6 obsoleto
+            Text(_isEditing ? 'Editar Ingrediente' : 'Adicionar Ingrediente', style: Theme.of(context).textTheme.headlineSmall),
+            SizedBox(height: 20),
+            TextFormField(
+              controller: _nomeController,
+              decoration: InputDecoration(labelText: 'Nome do Ingrediente'),
+              validator: (value) => value!.isEmpty ? 'Por favor, insira um nome' : null,
+            ),
+            SizedBox(height: 10),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: TextFormField(
+                    controller: _quantidadeController,
+                    decoration: InputDecoration(labelText: 'Quantidade'),
+                    keyboardType: TextInputType.number,
+                    validator: (value) => value!.isEmpty ? 'Insira a quantidade' : null,
+                  ),
+                ),
+                SizedBox(width: 10),
+                Expanded(
+                  flex: 1,
+                  child: DropdownButtonFormField<String>(
+                    value: _unidadeSelecionada,
+                    items: _unidades.map((String unidade) {
+                      return DropdownMenuItem<String>(
+                        value: unidade,
+                        child: Text(unidade),
+                      );
+                    }).toList(),
+                    onChanged: (newValue) {
+                      setState(() {
+                        _unidadeSelecionada = newValue!;
+                      });
+                    },
+                    decoration: InputDecoration(labelText: 'Un.'),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(_dataValidade == null
+                      ? 'Nenhuma data selecionada'
+                      : 'Validade: ${DateFormat('dd/MM/yyyy').format(_dataValidade!)}'),
+                ),
+                TextButton(
+                  onPressed: () => _selectDate(context),
+                  child: Text('Selecionar Data'),
+                ),
+              ],
+            ),
+            SizedBox(height: 20),
+            _isLoading
+                ? CircularProgressIndicator()
+                : ElevatedButton(
+                    onPressed: _salvarIngrediente,
+                    child: Text(_isEditing ? 'Salvar Alterações' : 'Adicionar'),
+                  ),
+          ],
         ),
       ),
     );
