@@ -1,60 +1,52 @@
-# RAIA App
+# RAIA - Gerenciador Inteligente de Alimentos
+
 Aplicativo mobile para gerenciar alimentos em casa, permitindo cadastrar produtos, controlar o estoque e receber sugestões de receitas com base nos itens disponíveis.
 
-# Objetivo
+## Objetivo
 
-Muitas pessoas não possuem controle sobre os alimentos armazenados em casa, o que gera desperdício, compras repetidas e dificuldade para decidir o que cozinhar.
-O objetivo do projeto é facilitar o gerenciamento doméstico e reduzir o desperdício de alimentos por meio de tecnologia.
+Reduzir o desperdício de alimentos e facilitar o planejamento de refeições através de uma gestão de estoque doméstica e inteligente.
 
-# Funcionalidades
+## Status do Projeto: Em Desenvolvimento (TCC 2026)
 
-Cadastro manual de alimentos
+| Funcionalidade | Status |
+| :--- | :--- |
+| **Módulo de Autenticação** | ✅ Completo |
+| Login com E-mail e Senha | ✅ Completo |
+| Cadastro de Novos Usuários | ✅ Completo |
+| Recuperação de Senha | ✅ Completo |
+| Exclusão de Conta | ✅ Completo |
+| **Módulo de Estoque** | 🔶 Parcial |
+| Adicionar Ingrediente Manualmente | ✅ Completo |
+| Visualizar Lista de Ingredientes | ✅ Completo |
+| Editar Ingrediente Existente | ✅ Completo |
+| Deletar Ingrediente | ✅ Completo |
+| Cadastro por Foto/QR Code | ❌ Não Iniciado |
+| **Módulo de Receitas** | ❌ Não Iniciado |
+| Sugestão de Receitas (IA) | ❌ Não Iniciado |
+| Salvar Receitas Favoritas | ❌ Não Iniciado |
 
-Cadastro a partir de QR Code ou foto da nota fiscal
+*Para um relatório técnico detalhado sobre a arquitetura e pontos de melhoria, consulte o arquivo `ANALISE_PROJETO.md`.* 
 
-Controle de quantidade e validade
-
-Visualização do estoque disponível
-
-Sugestão automática de receitas com base nos itens cadastrados
-
-# Tecnologias Utilizadas
+## Tecnologias Utilizadas
 
 *   **Mobile:** Flutter (Dart)
 *   **Backend & Banco de Dados:** Firebase (Firestore, Firebase Authentication)
-*   **Inteligência Artificial:** Python (recomendação de receitas)
+*   **Inteligência Artificial (Planejado):** Python (para o sistema de recomendação de receitas)
 
-# Arquitetura do Sistema
+## Arquitetura do Sistema
 
-A nova arquitetura simplificada do sistema é a seguinte:
+-   **Aplicativo Mobile (Flutter):** Comunica-se diretamente com os serviços do Firebase.
+-   **Firebase (BaaS):**
+    -   **Firestore:** Banco de dados NoSQL para usuários, inventários e receitas.
+    -   **Firebase Authentication:** Gerencia a autenticação e segurança dos usuários.
+-   **Serviço de IA (Python):** (Planejado) Consumirá os dados do inventário para gerar sugestões de receitas.
 
-*   **Aplicativo Mobile (Flutter):** O aplicativo se comunica diretamente com os serviços do Firebase para autenticação e armazenamento de dados.
-*   **Firebase (Backend-as-a-Service):**
-    *   **Firestore:** Atua como o banco de dados NoSQL principal, armazenando informações de usuários, inventários e receitas.
-    *   **Firebase Authentication:** Gerencia o login e a segurança dos usuários.
-*   **Serviço de IA (Python):** Um serviço separado que consome os dados do inventário (possivelmente via uma Cloud Function) para gerar e sugerir receitas.
 
-    Flutter (App Mobile) <-> Firebase (Backend & DB)
-           |
-           V
-    Serviço Python (IA) -> Sugestões de Receitas
+## Equipe
 
-# Equipe
+- Irineu Henrique Santos Silva
+- Matheus Ferreira Fagundes
+- Yasmin Victoria Lopes da Silva
 
-### Irineu Henrique Santos Silva
-
-### Matheus Ferreira Fagundes
-
-### Yasmin Victoria Lopes da Silva
-
-Projeto desenvolvido como Trabalho de Conclusão de Curso – COTUCA 2026.
-
-# Como Executar o Projeto
-
-# Status do Projeto
-
-Em desenvolvimento — TCC 2026
-
-# Licença
-
-Este projeto está sob a licença MIT. Consulte o arquivo LICENSE para mais informações.
+---
+*Projeto desenvolvido como Trabalho de Conclusão de Curso – COTUCA 2026.*

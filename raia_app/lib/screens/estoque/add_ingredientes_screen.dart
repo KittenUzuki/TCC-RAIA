@@ -71,17 +71,22 @@ class _AddIngredientesScreenState extends State<AddIngredientesScreen> {
 
       final user = FirebaseAuth.instance.currentUser;
       if (user == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro: Usuário não autenticado.')),
-        );
-        setState(() => _isLoading = false);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Erro: Usuário não autenticado.')),
+          );
+          setState(() => _isLoading = false);
+        }
         return;
       }
       
       try {
-        final collection = FirebaseFirestore.instance.collection('ingredientes').doc(user.uid).collection('userIngredientes');
+        // REATORAÇÃO: Acessar a coleção de nível superior 'ingredientes'
+        final collection = FirebaseFirestore.instance.collection('ingredientes');
 
+        // REATORAÇÃO: Adicionar o 'userId' aos dados que serão salvos
         final data = {
+          'userId': user.uid,
           'nome': _nomeController.text,
           'quantidade': int.tryParse(_quantidadeController.text) ?? 0,
           'unidade': _unidadeSelecionada,
@@ -89,8 +94,10 @@ class _AddIngredientesScreenState extends State<AddIngredientesScreen> {
         };
 
         if (_isEditing) {
+          // A lógica de edição continua a mesma, apenas atualiza os dados no documento correto
           await collection.doc(widget.ingrediente!.id).update(data);
         } else {
+          // Adiciona o campo 'criadoEm' apenas para novos ingredientes
           final dataToCreate = {
             ...data,
             'criadoEm': Timestamp.now(),
@@ -112,7 +119,9 @@ class _AddIngredientesScreenState extends State<AddIngredientesScreen> {
           );
         }
       } finally {
-        if (mounted) setState(() => _isLoading = false);
+        if (mounted) {
+          setState(() => _isLoading = false);
+        }
       }
     }
   }
@@ -127,7 +136,6 @@ class _AddIngredientesScreenState extends State<AddIngredientesScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            // CORREÇÃO: Usando headlineSmall em vez do headline6 obsoleto
             Text(_isEditing ? 'Editar Ingrediente' : 'Adicionar Ingrediente', style: Theme.of(context).textTheme.headlineSmall),
             SizedBox(height: 20),
             TextFormField(

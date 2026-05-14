@@ -4,7 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 
-import 'add_ingredientes_screen.dart'; // A tela de modal que já funciona
+import 'add_ingredientes_screen.dart'; 
 
 class EstoqueScreen extends StatefulWidget {
   @override
@@ -17,12 +17,8 @@ class _EstoqueScreenState extends State<EstoqueScreen> {
   Future<void> _deletarIngrediente(String docId) async {
     if (user == null) return;
     try {
-      await FirebaseFirestore.instance
-          .collection('ingredientes')
-          .doc(user!.uid)
-          .collection('userIngredientes')
-          .doc(docId)
-          .delete();
+      // REATORAÇÃO: Apontar para a coleção correta para deletar
+      await FirebaseFirestore.instance.collection('ingredientes').doc(docId).delete();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Ingrediente removido com sucesso!'), duration: Duration(seconds: 2)),
@@ -49,6 +45,7 @@ class _EstoqueScreenState extends State<EstoqueScreen> {
           padding: EdgeInsets.only(
             bottom: MediaQuery.of(context).viewInsets.bottom,
           ),
+          // A tela de edição já foi refatorada, então ela funcionará corretamente
           child: AddIngredientesScreen(ingrediente: ingrediente),
         );
       },
@@ -64,18 +61,18 @@ class _EstoqueScreenState extends State<EstoqueScreen> {
       body: user == null
           ? Center(child: Text("Faça login para ver seu estoque."))
           : StreamBuilder<QuerySnapshot>(
+              // REATORAÇÃO: Alterar a consulta do StreamBuilder
               stream: FirebaseFirestore.instance
-                  .collection('ingredientes')
-                  .doc(user!.uid)
-                  .collection('userIngredientes')
-                  .orderBy('validade')
+                  .collection('ingredientes') // 1. Acessar a coleção principal
+                  .where('userId', isEqualTo: user!.uid) // 2. Filtrar pelo ID do usuário
+                  .orderBy('validade') // 3. Ordenar os resultados
                   .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return Center(child: CircularProgressIndicator());
                 }
                 if (snapshot.hasError) {
-                  return Center(child: Text("Erro: ${snapshot.error}"));
+                  return Center(child: Text("Erro ao carregar o estoque: ${snapshot.error}"));
                 }
                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                   return Center(
