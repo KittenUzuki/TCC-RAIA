@@ -81,10 +81,8 @@ class _AddIngredientesScreenState extends State<AddIngredientesScreen> {
       }
       
       try {
-        // REATORAÇÃO: Acessar a coleção de nível superior 'ingredientes'
         final collection = FirebaseFirestore.instance.collection('ingredientes');
 
-        // REATORAÇÃO: Adicionar o 'userId' aos dados que serão salvos
         final data = {
           'userId': user.uid,
           'nome': _nomeController.text,
@@ -94,10 +92,8 @@ class _AddIngredientesScreenState extends State<AddIngredientesScreen> {
         };
 
         if (_isEditing) {
-          // A lógica de edição continua a mesma, apenas atualiza os dados no documento correto
           await collection.doc(widget.ingrediente!.id).update(data);
         } else {
-          // Adiciona o campo 'criadoEm' apenas para novos ingredientes
           final dataToCreate = {
             ...data,
             'criadoEm': Timestamp.now(),
@@ -129,76 +125,83 @@ class _AddIngredientesScreenState extends State<AddIngredientesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(20.0),
-      child: Form(
-        key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            Text(_isEditing ? 'Editar Ingrediente' : 'Adicionar Ingrediente', style: Theme.of(context).textTheme.headlineSmall),
-            SizedBox(height: 20),
-            TextFormField(
-              controller: _nomeController,
-              decoration: InputDecoration(labelText: 'Nome do Ingrediente'),
-              validator: (value) => value!.isEmpty ? 'Por favor, insira um nome' : null,
-            ),
-            SizedBox(height: 10),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Expanded(
-                  flex: 2,
-                  child: TextFormField(
-                    controller: _quantidadeController,
-                    decoration: InputDecoration(labelText: 'Quantidade'),
-                    keyboardType: TextInputType.number,
-                    validator: (value) => value!.isEmpty ? 'Insira a quantidade' : null,
-                  ),
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(_isEditing ? 'Editar Ingrediente' : 'Adicionar Ingrediente'),
+        elevation: 2,
+      ),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                SizedBox(height: 20),
+                TextFormField(
+                  controller: _nomeController,
+                  decoration: InputDecoration(labelText: 'Nome do Ingrediente'),
+                  validator: (value) => value!.isEmpty ? 'Por favor, insira um nome' : null,
                 ),
-                SizedBox(width: 10),
-                Expanded(
-                  flex: 1,
-                  child: DropdownButtonFormField<String>(
-                    value: _unidadeSelecionada,
-                    items: _unidades.map((String unidade) {
-                      return DropdownMenuItem<String>(
-                        value: unidade,
-                        child: Text(unidade),
-                      );
-                    }).toList(),
-                    onChanged: (newValue) {
-                      setState(() {
-                        _unidadeSelecionada = newValue!;
-                      });
-                    },
-                    decoration: InputDecoration(labelText: 'Un.'),
-                  ),
+                SizedBox(height: 10),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Expanded(
+                      flex: 2,
+                      child: TextFormField(
+                        controller: _quantidadeController,
+                        decoration: InputDecoration(labelText: 'Quantidade'),
+                        keyboardType: TextInputType.number,
+                        validator: (value) => value!.isEmpty ? 'Insira a quantidade' : null,
+                      ),
+                    ),
+                    SizedBox(width: 10),
+                    Expanded(
+                      flex: 1,
+                      child: DropdownButtonFormField<String>(
+                        value: _unidadeSelecionada,
+                        items: _unidades.map((String unidade) {
+                          return DropdownMenuItem<String>(
+                            value: unidade,
+                            child: Text(unidade),
+                          );
+                        }).toList(),
+                        onChanged: (newValue) {
+                          setState(() {
+                            _unidadeSelecionada = newValue!;
+                          });
+                        },
+                        decoration: InputDecoration(labelText: 'Un.'),
+                      ),
+                    ),
+                  ],
                 ),
+                SizedBox(height: 10),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(_dataValidade == null
+                          ? 'Nenhuma data selecionada'
+                          : 'Validade: ${DateFormat('dd/MM/yyyy').format(_dataValidade!)}'),
+                    ),
+                    TextButton(
+                      onPressed: () => _selectDate(context),
+                      child: Text('Selecionar Data'),
+                    ),
+                  ],
+                ),
+                SizedBox(height: 20),
+                _isLoading
+                    ? CircularProgressIndicator()
+                    : ElevatedButton(
+                        onPressed: _salvarIngrediente,
+                        child: Text(_isEditing ? 'Salvar Alterações' : 'Adicionar'),
+                      ),
               ],
             ),
-            SizedBox(height: 10),
-            Row(
-              children: [
-                Expanded(
-                  child: Text(_dataValidade == null
-                      ? 'Nenhuma data selecionada'
-                      : 'Validade: ${DateFormat('dd/MM/yyyy').format(_dataValidade!)}'),
-                ),
-                TextButton(
-                  onPressed: () => _selectDate(context),
-                  child: Text('Selecionar Data'),
-                ),
-              ],
-            ),
-            SizedBox(height: 20),
-            _isLoading
-                ? CircularProgressIndicator()
-                : ElevatedButton(
-                    onPressed: _salvarIngrediente,
-                    child: Text(_isEditing ? 'Salvar Alterações' : 'Adicionar'),
-                  ),
-          ],
+          ),
         ),
       ),
     );
