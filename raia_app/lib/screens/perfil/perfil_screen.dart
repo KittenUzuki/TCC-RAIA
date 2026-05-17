@@ -45,6 +45,8 @@ class _PerfilScreenState extends State<PerfilScreen> {
         });
       }
     } catch (e) {
+      // MODIFICATION: Print the error to the console
+      print(">>>>>> FIREBASE ERROR CAPTURADO: $e");
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Erro ao buscar dados: $e")),
@@ -109,7 +111,8 @@ class _PerfilScreenState extends State<PerfilScreen> {
     if (mounted) setState(() => _isLoading = true);
 
     try {
-      final ingredientesQuery = await _firestore.collection('users').doc(user.uid).collection('ingredientes').get();
+      // This query MIGHT also need an index in the future.
+      final ingredientesQuery = await _firestore.collection('ingredientes').where('userId', isEqualTo: user.uid).get();
       for (var doc in ingredientesQuery.docs) {
         await doc.reference.delete();
       }
@@ -140,6 +143,8 @@ class _PerfilScreenState extends State<PerfilScreen> {
           );
        }
     } catch (e) {
+        // MODIFICATION: Print the error to the console here as well
+        print(">>>>>> FIREBASE ERROR AO DELETAR: $e");
       if (mounted) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
