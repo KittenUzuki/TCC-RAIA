@@ -34,8 +34,15 @@ class _PerfilScreenState extends State<PerfilScreen> {
     }
 
     try {
-      // CORREÇÃO: Coleção alterada para "users"
-      final docSnapshot = await _firestore.collection('users').doc(user.uid).get();
+        print("BUSCANDO USER: ${user.uid}");
+
+        final docSnapshot = await _firestore
+            .collection('users')
+            .doc(user.uid)
+            .get(const GetOptions(source: Source.server));
+
+        print("DOCUMENTO ENCONTRADO: ${docSnapshot.exists}");
+        print("DADOS: ${docSnapshot.data()}");
 
       if (docSnapshot.exists && mounted) {
         setState(() {

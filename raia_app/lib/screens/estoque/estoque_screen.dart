@@ -64,8 +64,7 @@ class _EstoqueScreenState extends State<EstoqueScreen> {
               // REATORAÇÃO: Alterar a consulta do StreamBuilder
               stream: FirebaseFirestore.instance
                   .collection('ingredientes') // 1. Acessar a coleção principal
-                  .where('userId', isEqualTo: user!.uid) // 2. Filtrar pelo ID do usuário
-                  .orderBy('validade') // 3. Ordenar os resultados
+                  .where('userId', isEqualTo: user!.uid)
                   .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {

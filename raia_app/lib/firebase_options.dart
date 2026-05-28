@@ -42,7 +42,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions web = FirebaseOptions(
     apiKey: 'AIzaSyAV9JLQYabAIh_wtHAerRz7udMlMqz5h9s',
-    appId: '1:772917006496:web:d57af59a6b33e58e75f9c5',
+    appId: '1:772917006496:web:3d141bc62e07226175f9c5',
     messagingSenderId: '772917006496',
     projectId: 'raia-app-81e71',
     authDomain: 'raia-app-81e71.firebaseapp.com',
@@ -63,6 +63,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '772917006496',
     projectId: 'raia-app-81e71',
     storageBucket: 'raia-app-81e71.firebasestorage.app',
+    iosClientId: '772917006496-7gk765kates60sbuacp40ahc5cv7ose5.apps.googleusercontent.com',
     iosBundleId: 'com.example.riraApp',
   );
 
@@ -72,6 +73,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '772917006496',
     projectId: 'raia-app-81e71',
     storageBucket: 'raia-app-81e71.firebasestorage.app',
+    iosClientId: '772917006496-7gk765kates60sbuacp40ahc5cv7ose5.apps.googleusercontent.com',
     iosBundleId: 'com.example.riraApp',
   );
 
@@ -83,4 +85,5 @@ class DefaultFirebaseOptions {
     authDomain: 'raia-app-81e71.firebaseapp.com',
     storageBucket: 'raia-app-81e71.firebasestorage.app',
   );
+
 }
