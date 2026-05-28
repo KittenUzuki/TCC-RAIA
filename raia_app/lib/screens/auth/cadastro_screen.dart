@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:raia_app/screens/main_screen.dart';
+import 'package:raia_app/screens/auth/login_screen.dart';
 
 class CadastroScreen extends StatelessWidget {
   final nomeController = TextEditingController();
@@ -32,8 +32,9 @@ class CadastroScreen extends StatelessWidget {
         password: senhaController.text.trim(),
       );
 
+      // CORREÇÃO: Padrão da coleção alterado para "users"
       if (userCredential.user != null) {
-        await FirebaseFirestore.instance.collection('usuarios').doc(userCredential.user!.uid).set({
+        await FirebaseFirestore.instance.collection('users').doc(userCredential.user!.uid).set({
           'nome': nomeController.text.trim(),
           'email': emailController.text.trim(),
           'dataCriacao': FieldValue.serverTimestamp(),
@@ -43,12 +44,13 @@ class CadastroScreen extends StatelessWidget {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Cadastro realizado com sucesso!'),
+            content: Text('Cadastro realizado com sucesso! Faça o login.'),
             backgroundColor: Colors.green,
           ),
         );
+        
         Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (context) => MainScreen()),
+          MaterialPageRoute(builder: (context) => LoginScreen()),
           (route) => false,
         );
       }

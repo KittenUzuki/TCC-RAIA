@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'firebase_options.dart';
+import 'screens/main_screen.dart';
 
 // widget
 import 'widgets/bottom_nav_bar.dart';
@@ -30,8 +30,8 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // Desativa a persistência offline para corrigir o erro 'client is offline'
-  FirebaseFirestore.instance.settings = const Settings(persistenceEnabled: false);
+
+
 
   runApp(RaiaApp());
 }
@@ -59,10 +59,7 @@ class RaiaApp extends StatelessWidget {
   }
 }
 
-class MainScreen extends StatefulWidget {
-  @override
-  State<MainScreen> createState() => _MainScreenState();
-}
+
 
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;

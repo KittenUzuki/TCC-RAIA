@@ -34,7 +34,8 @@ class _PerfilScreenState extends State<PerfilScreen> {
     }
 
     try {
-      final docSnapshot = await _firestore.collection('usuarios').doc(user.uid).get();
+      // CORREÇÃO: Coleção alterada para "users"
+      final docSnapshot = await _firestore.collection('users').doc(user.uid).get();
 
       if (docSnapshot.exists && mounted) {
         setState(() {
@@ -45,7 +46,6 @@ class _PerfilScreenState extends State<PerfilScreen> {
         });
       }
     } catch (e) {
-      // MODIFICATION: Print the error to the console
       print(">>>>>> FIREBASE ERROR CAPTURADO: $e");
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -111,12 +111,12 @@ class _PerfilScreenState extends State<PerfilScreen> {
     if (mounted) setState(() => _isLoading = true);
 
     try {
-      // This query MIGHT also need an index in the future.
       final ingredientesQuery = await _firestore.collection('ingredientes').where('userId', isEqualTo: user.uid).get();
       for (var doc in ingredientesQuery.docs) {
         await doc.reference.delete();
       }
-      await _firestore.collection('usuarios').doc(user.uid).delete();
+      // CORREÇÃO: Coleção alterada para "users"
+      await _firestore.collection('users').doc(user.uid).delete();
 
       await user.delete();
 
@@ -143,7 +143,6 @@ class _PerfilScreenState extends State<PerfilScreen> {
           );
        }
     } catch (e) {
-        // MODIFICATION: Print the error to the console here as well
         print(">>>>>> FIREBASE ERROR AO DELETAR: $e");
       if (mounted) {
         setState(() => _isLoading = false);
