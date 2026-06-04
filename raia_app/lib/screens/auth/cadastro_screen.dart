@@ -32,13 +32,18 @@ class CadastroScreen extends StatelessWidget {
         password: senhaController.text.trim(),
       );
 
-      // CORREÇÃO: Padrão da coleção alterado para "users"
+      print('DEBUG: Usuário autenticado criado com UID: ${userCredential.user?.uid}');
+
       if (userCredential.user != null) {
+        print('DEBUG: Tentando criar documento no Firestore para UID: ${userCredential.user!.uid}');
         await FirebaseFirestore.instance.collection('users').doc(userCredential.user!.uid).set({
           'nome': nomeController.text.trim(),
           'email': emailController.text.trim(),
           'dataCriacao': FieldValue.serverTimestamp(),
         });
+        print('DEBUG: Documento no Firestore criado com sucesso!');
+      } else {
+        print('DEBUG: userCredential.user é nulo após o registro na autenticação.');
       }
 
       if (context.mounted) {
@@ -56,6 +61,7 @@ class CadastroScreen extends StatelessWidget {
       }
 
     } on FirebaseAuthException catch (e) {
+      print('DEBUG: FirebaseAuthException capturada: $e');
       String mensagemErro = 'Ocorreu um erro desconhecido.';
       if (e.code == 'weak-password') {
         mensagemErro = 'A senha fornecida é muito fraca (mínimo 6 caracteres).';
@@ -70,6 +76,8 @@ class CadastroScreen extends StatelessWidget {
           SnackBar(content: Text(mensagemErro)),
         );
       }
+    } catch (e) {
+      print('DEBUG: Outro erro capturado durante o registro: $e');
     }
   }
 
