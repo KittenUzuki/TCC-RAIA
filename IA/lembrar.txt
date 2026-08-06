@@ -1,0 +1,3 @@
+criar um .venv e depois
+
+pip install requests sentence-transformers
