@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+
+import '../../models/usuario_model.dart';
 import '../../services/auth_service.dart';
+import '../../services/usuario_service.dart';
 
 class CadastroScreen extends StatefulWidget {
   const CadastroScreen({super.key});
@@ -15,6 +18,7 @@ class _CadastroScreenState extends State<CadastroScreen> {
   final confirmarSenhaController = TextEditingController();
 
   final AuthService authService = AuthService();
+  final UsuarioService usuarioService = UsuarioService();
 
   Future<void> cadastrar() async {
     if (nomeController.text.isEmpty ||
@@ -39,10 +43,31 @@ class _CadastroScreenState extends State<CadastroScreen> {
     }
 
     try {
-      await authService.cadastrar(
+      // Cria a conta no Firebase Authentication
+      final resultado = await authService.cadastrar(
         email: emailController.text.trim(),
         senha: senhaController.text.trim(),
       );
+
+      // Pega o usuário criado pelo Firebase Authentication
+      final usuarioFirebase = resultado.user;
+
+      if (usuarioFirebase == null) {
+        throw Exception(
+          'Não foi possível obter o usuário criado.',
+        );
+      }
+
+      // Cria o modelo do usuário
+      final usuario = UsuarioModel(
+        id: usuarioFirebase.uid,
+        nome: nomeController.text.trim(),
+        email: emailController.text.trim(),
+        dataCriacao: DateTime.now(),
+      );
+
+      // Salva os dados do usuário no Firestore
+      await usuarioService.criarUsuario(usuario);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -54,10 +79,13 @@ class _CadastroScreenState extends State<CadastroScreen> {
         Navigator.pop(context);
       }
     } catch (e) {
+      print('ERRO COMPLETO NO CADASTRO: $e');
+      
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Erro ao cadastrar: $e'),
+            duration: const Duration(seconds: 10),
           ),
         );
       }
@@ -70,6 +98,7 @@ class _CadastroScreenState extends State<CadastroScreen> {
     emailController.dispose();
     senhaController.dispose();
     confirmarSenhaController.dispose();
+
     super.dispose();
   }
 
@@ -81,12 +110,14 @@ class _CadastroScreenState extends State<CadastroScreen> {
       appBar: AppBar(
         title: const Text('Cadastro'),
       ),
+
       body: Center(
         child: SingleChildScrollView(
           child: Padding(
             padding: EdgeInsets.symmetric(
               horizontal: largura * 0.08,
             ),
+
             child: Column(
               children: [
                 const Text(

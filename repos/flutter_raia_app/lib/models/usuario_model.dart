@@ -1,11 +1,31 @@
 class UsuarioModel {
-  final String uid;
+  final String id;
   final String nome;
   final String email;
+  final DateTime dataCriacao;
 
-  const UsuarioModel({
-    required this.uid,
+  UsuarioModel({
+    required this.id,
     required this.nome,
     required this.email,
+    required this.dataCriacao,
   });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'nome': nome,
+      'email': email,
+      'dataCriacao': dataCriacao,
+    };
+  }
+
+  factory UsuarioModel.fromMap(Map<String, dynamic> map) {
+    return UsuarioModel(
+      id: map['id'],
+      nome: map['nome'],
+      email: map['email'],
+      dataCriacao: map['dataCriacao'].toDate(),
+    );
+  }
 }
