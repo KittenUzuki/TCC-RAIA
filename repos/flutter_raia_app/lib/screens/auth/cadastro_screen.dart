@@ -52,6 +52,9 @@ class _CadastroScreenState extends State<CadastroScreen> {
       // Pega o usuário criado pelo Firebase Authentication
       final usuarioFirebase = resultado.user;
 
+      print('$usuarioFirebase');
+
+
       if (usuarioFirebase == null) {
         throw Exception(
           'Não foi possível obter o usuário criado.',
@@ -66,8 +69,13 @@ class _CadastroScreenState extends State<CadastroScreen> {
         dataCriacao: DateTime.now(),
       );
 
+      print('$usuario');
+
+
       // Salva os dados do usuário no Firestore
       await usuarioService.criarUsuario(usuario);
+      print('chegou aqui');
+
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
