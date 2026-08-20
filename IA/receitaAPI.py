@@ -69,25 +69,27 @@ _TRADUCAO_PT_EN = {
     "alho": "garlic",
     "manjericao": "basil",
     "frango": "chicken",
+    "leite" : "milk",
 }
 
-LIMITE_CANDIDATAS = 20
+#LIMITE = 20
 
 
-def obter_receitas_candidatas(estoque: list[ItemEstoque], limite: int = LIMITE_CANDIDATAS
+#def obter_receitas(estoque: list[ItemEstoque], limite: int = LIMITE
+def obter_receitas(estoque: list[ItemEstoque]
 ) -> list[Receita]:
     ids_ja_buscados: set[str] = set()
     receitas: list[Receita] = []
 
     for item in estoque:
-        if len(receitas) >= limite:
-                break
+        #if len(receitas) >= limite:
+        #        break
         nome_em_ingles = _TRADUCAO_PT_EN.get(item.nome.lower(), item.nome)
         candidatos = fetch_receitas_por_ingrediente(nome_em_ingles)
 
     for candidato in candidatos:
-        if len(receitas) >= limite:
-                break
+       # if len(receitas) >= limite:
+        #        break
         meal_id = candidato["idMeal"]
         if meal_id in ids_ja_buscados:
             continue
@@ -175,9 +177,9 @@ def similaridade_ingredientes(nome_estoque: str, nome_receita: str) -> float:
 def sao_o_mesmo_ingrediente(nome_estoque: str, nome_receita: str) -> bool:
     return similaridade_ingredientes(nome_estoque, nome_receita) >= LIMIAR_SIMILARIDADE
 
-PESO_COBERTURA = 10.0
+PESO_TEM = 10.0
 PESO_URGENCIA = 5.0
-PENALIDADE_FALTANTE = 1.0
+PENALIDADE_FALTANTE = 5.0
 DIAS_URGENCIA = 3 
 
 
@@ -187,7 +189,7 @@ def _dias_para_vencer(validade: Optional[date]) -> Optional[int]:
     return (validade - date.today()).days
 
 
-def calcular_score(receita: Receita, estoque: list[ItemEstoque]) -> dict:
+def calcular(receita: Receita, estoque: list[ItemEstoque]) -> dict:
     total_ingredientes = len(receita.ingredientes) or 1
     encontrados = 0
     faltantes = []
@@ -217,52 +219,52 @@ def calcular_score(receita: Receita, estoque: list[ItemEstoque]) -> dict:
         if dias is not None and dias <= DIAS_URGENCIA:
             bonus_urgencia += 1.0
 
-    cobertura = encontrados / total_ingredientes
-    score = (
-        cobertura * PESO_COBERTURA
+    tem = encontrados / total_ingredientes
+    calculo = (
+        tem * PESO_TEM
         + bonus_urgencia * PESO_URGENCIA
         - len(faltantes) * PENALIDADE_FALTANTE
     )
 
     return {
         "receita": receita.nome,
-        "score": round(score, 2),
-        "cobertura_pct": round(cobertura * 100, 1),
+        "calculo": round(calculo, 2),
+        "tem_pct": round(tem * 100, 1),
         "ingredientes_faltantes": faltantes,
         "usa_item_urgente": bonus_urgencia > 0,
     }
 
 
 def ranquear_receitas(receitas: list[Receita], estoque: list[ItemEstoque]) -> list[dict]:
-    resultados = [calcular_score(r, estoque) for r in receitas]
-    return sorted(resultados, key=lambda r: r["score"], reverse=True)
+    resultados = [calcular(r, estoque) for r in receitas]
+    return sorted(resultados, key=lambda r: r["calculo"], reverse=True)
 
 
 if __name__ == "__main__":
     estoque_do_usuario = [
-        ItemEstoque("tomate", 4, "unidade", validade=date(2026, 8, 7)),  # vence logo
-        ItemEstoque("cebola", 2, "unidade", validade=date(2026, 8, 20)),
+        ItemEstoque("tomate", 4, "unidade", validade=date(2026, 8, 22)),  
+        ItemEstoque("cebola", 2, "unidade", validade=date(2026, 8, 30)),
         ItemEstoque("azeite", 500, "ml"),
         ItemEstoque("alho", 3, "unidade"),
         ItemEstoque("manjericao", 1, "unidade"),
+        ItemEstoque("leite", 3, "litro")
     ]
 
     print("Buscando receitas candidatas na API do TheMealDB...\n")
-    receitas_candidatas = obter_receitas_candidatas(estoque_do_usuario)
+    receitas_candidatas = obter_receitas(estoque_do_usuario)
 
     if not receitas_candidatas:
         print(
-            "Nenhuma receita candidata encontrada. Verifique a conexao com "
-            "a internet e se os nomes em _TRADUCAO_PT_EN cobrem seu estoque."
+            "Nenhuma receita candidata encontrada. Verifique a conexao com a internet"
         )
     else:
         print(f"{len(receitas_candidatas)} receita(s) candidata(s) encontrada(s) "
-              f"(baixando modelo de embeddings, se ainda nao estiver em cache)...\n")
+              f"(baixando modelo)...\n")
 
         print("Ranking de receitas sugeridas:\n")
         for resultado in ranquear_receitas(receitas_candidatas, estoque_do_usuario):
             print(f"- {resultado['receita']}")
-            print(f"  score: {resultado['score']} | cobertura: {resultado['cobertura_pct']}%")
+            print(f"  calculo: {resultado['calculo']} | tem: {resultado['tem_pct']}%")
             print(f"  usa item perto de vencer: {resultado['usa_item_urgente']}")
             if resultado["ingredientes_faltantes"]:
                 print(f"  faltam: {', '.join(resultado['ingredientes_faltantes'])}")
