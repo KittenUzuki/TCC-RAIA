@@ -42,36 +42,32 @@ A estrutura a seguir usa subcoleções para organizar os dados de forma que cada
 
 Estas regras garantem que os usuários só possam ler e escrever seus próprios dados. Copie e cole isso na aba "Regras" do seu console do Firestore.
 
+> ⚠️ **ATENÇÃO:** As regras abaixo (com subcoleções `/ingredientes/{userId}/...`)
+> **NÃO** correspondem à estrutura que o app usa hoje. O código atual grava
+> ingredientes em uma coleção de nível raiz `/ingredientes/{docId}` com um campo
+> `userId`. Use as regras reais que estão em `raia_app/firestore.rules`.
+
+Regras reais (as mesmas que estão em `raia_app/firestore.rules`):
+
 ```
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Usuários podem ler e atualizar seu próprio perfil
+    // Perfil do usuário: /users/{uid}
     match /users/{userId} {
-      allow read, update: if request.auth != null && request.auth.uid == userId;
+      allow read, create, update, delete:
+        if request.auth != null && request.auth.uid == userId;
     }
 
-    // Permite que usuários autenticados criem seu perfil
-    match /users/{userId} {
-        allow create: if request.auth != null;
-    }
-
-    // Usuários podem ler e escrever apenas em sua própria lista de ingredientes
-    match /ingredientes/{userId}/{documents=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-
-    // Usuários podem ler e escrever apenas em sua própria lista de favoritos
-    match /favoritos/{userId}/{documents=**} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-
-    // Todas as receitas são públicas para leitura por qualquer usuário autenticado
-    match /receitas/{receitaId} {
-        allow read: if request.auth != null;
-        // Restrinja a escrita apenas para administradores (se necessário)
-        allow write: if false; 
+    // Ingredientes: coleção raiz, cada doc tem o campo `userId`
+    match /ingredientes/{docId} {
+      allow read:
+        if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create:
+        if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow update, delete:
+        if request.auth != null && resource.data.userId == request.auth.uid;
     }
   }
 }

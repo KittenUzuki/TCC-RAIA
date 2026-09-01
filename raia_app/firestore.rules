@@ -1,0 +1,33 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Perfil do usuário: /users/{uid}
+    // O usuário só acessa o próprio documento (uid == id do documento).
+    match /users/{userId} {
+      allow read, create, update, delete:
+        if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Ingredientes: coleção de nível raiz. Cada documento carrega o campo `userId`.
+    // (Estrutura usada de fato pelo app: collection('ingredientes').add({... userId ...}))
+    match /ingredientes/{docId} {
+      // Leitura/consulta: só documentos do próprio usuário.
+      allow read:
+        if request.auth != null && resource.data.userId == request.auth.uid;
+
+      // Criação: o documento novo precisa pertencer ao usuário autenticado.
+      allow create:
+        if request.auth != null && request.resource.data.userId == request.auth.uid;
+
+      // Edição/remoção: só documentos do próprio usuário.
+      allow update, delete:
+        if request.auth != null && resource.data.userId == request.auth.uid;
+    }
+
+    // OBS: as coleções `receitas` e `favoritos` ainda não estão ligadas no app.
+    // Enquanto não houver regra explícita, elas ficam bloqueadas por padrão (default-deny).
+    // Adicione blocos match/... quando essas telas forem integradas.
+  }
+}
