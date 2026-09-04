@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:raia_app/db.dart';
 import 'package:raia_app/screens/auth/login_screen.dart';
 
 class CadastroScreen extends StatelessWidget {
@@ -36,11 +37,19 @@ class CadastroScreen extends StatelessWidget {
 
       if (userCredential.user != null) {
         print('DEBUG: Tentando criar documento no Firestore para UID: ${userCredential.user!.uid}');
-        await FirebaseFirestore.instance.collection('users').doc(userCredential.user!.uid).set({
+        await db.collection('users').doc(userCredential.user!.uid).set({
           'nome': nomeController.text.trim(),
           'email': emailController.text.trim(),
           'dataCriacao': FieldValue.serverTimestamp(),
-        });
+        }).timeout(
+          const Duration(seconds: 10),
+          onTimeout: () {
+            throw Exception(
+              'TIMEOUT: a escrita no Firestore nao respondeu em 10s. '
+              'Provavel causa: banco em modo Datastore (nao Nativo) ou conexao bloqueada.',
+            );
+          },
+        );
         print('DEBUG: Documento no Firestore criado com sucesso!');
       } else {
         print('DEBUG: userCredential.user é nulo após o registro na autenticação.');
@@ -78,6 +87,15 @@ class CadastroScreen extends StatelessWidget {
       }
     } catch (e) {
       print('DEBUG: Outro erro capturado durante o registro: $e');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro ao gravar no Firestore: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 8),
+          ),
+        );
+      }
     }
   }
 

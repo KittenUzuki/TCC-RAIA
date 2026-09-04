@@ -3,8 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
+import 'package:raia_app/db.dart';
 
-import 'add_ingredientes_screen.dart'; 
+import 'add_ingredientes_screen.dart';
 
 class EstoqueScreen extends StatefulWidget {
   @override
@@ -18,7 +19,7 @@ class _EstoqueScreenState extends State<EstoqueScreen> {
     if (user == null) return;
     try {
       // REATORAÇÃO: Apontar para a coleção correta para deletar
-      await FirebaseFirestore.instance.collection('ingredientes').doc(docId).delete();
+      await db.collection('ingredientes').doc(docId).delete();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Ingrediente removido com sucesso!'), duration: Duration(seconds: 2)),
@@ -62,7 +63,7 @@ class _EstoqueScreenState extends State<EstoqueScreen> {
           ? Center(child: Text("Faça login para ver seu estoque."))
           : StreamBuilder<QuerySnapshot>(
               // REATORAÇÃO: Alterar a consulta do StreamBuilder
-              stream: FirebaseFirestore.instance
+              stream: db
                   .collection('ingredientes') // 1. Acessar a coleção principal
                   .where('userId', isEqualTo: user!.uid)
                   .snapshots(),

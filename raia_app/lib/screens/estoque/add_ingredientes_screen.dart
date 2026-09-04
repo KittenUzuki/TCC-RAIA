@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
+import 'package:raia_app/db.dart';
 
 class AddIngredientesScreen extends StatefulWidget {
   final QueryDocumentSnapshot? ingrediente; // Ingrediente para edição
@@ -81,7 +82,7 @@ class _AddIngredientesScreenState extends State<AddIngredientesScreen> {
       }
       
       try {
-        final collection = FirebaseFirestore.instance.collection('ingredientes');
+        final collection = db.collection('ingredientes');
 
         final data = {
           'userId': user.uid,
@@ -91,15 +92,26 @@ class _AddIngredientesScreenState extends State<AddIngredientesScreen> {
           'validade': _dataValidade != null ? Timestamp.fromDate(_dataValidade!) : null,
         };
 
+        final Future<void> operacao;
         if (_isEditing) {
-          await collection.doc(widget.ingrediente!.id).update(data);
+          operacao = collection.doc(widget.ingrediente!.id).update(data);
         } else {
           final dataToCreate = {
             ...data,
             'criadoEm': Timestamp.now(),
           };
-          await collection.add(dataToCreate);
+          operacao = collection.add(dataToCreate).then((_) {});
         }
+
+        await operacao.timeout(
+          const Duration(seconds: 10),
+          onTimeout: () {
+            throw Exception(
+              'TIMEOUT: o Firestore nao respondeu em 10s. '
+              'Provavel causa: banco em modo Datastore (nao Nativo) ou conexao bloqueada.',
+            );
+          },
+        );
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
