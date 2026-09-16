@@ -9,7 +9,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.rira_app"
+    namespace = "com.example.raia_app"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -24,6 +24,11 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
+        // Mantido como "rira_app" (nome antigo) porque é o pacote já
+        // registrado no google-services.json / console do Firebase.
+        // Se quiser trocar para "raia_app", é preciso re-registrar o app
+        // no console do Firebase e baixar um novo google-services.json
+        // (ver checklist).
         applicationId = "com.example.rira_app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
