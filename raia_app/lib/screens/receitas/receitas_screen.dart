@@ -7,7 +7,7 @@ import 'package:raia_app/db.dart';
 
 import '../../models/ingrediente.dart';
 import '../../models/receita.dart';
-import 'receitas_favoritas_screen.dart'; // 🔥 IMPORTANTE
+import 'receitas_favoritas_screen.dart'; 
 import 'detalhe_receita_screen.dart';
 
 class ReceitasScreen extends StatefulWidget {
