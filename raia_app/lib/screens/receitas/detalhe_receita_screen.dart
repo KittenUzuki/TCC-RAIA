@@ -1,86 +1,115 @@
 import 'package:flutter/material.dart';
 
+import '../../models/receita.dart';
+
 class DetalheReceitaScreen extends StatelessWidget {
-  final String nome;
-  final String descricao;
-  final List<String> ingredientes;
-  final List<String> preparo;
+  final Receita receita;
 
   const DetalheReceitaScreen({
-    required this.nome,
-    required this.descricao,
-    required this.ingredientes,
-    required this.preparo,
+    super.key,
+    required this.receita,
   });
+
+  List<String> get _passosPreparo {
+    final texto = receita.modoPreparo.trim();
+    if (texto.isEmpty) return [];
+
+    final linhas = texto
+        .split(RegExp(r'\r?\n'))
+        .map((l) => l.trim())
+        .where((l) => l.isNotEmpty)
+        .toList();
+
+    return linhas.isNotEmpty ? linhas : [texto];
+  }
 
   @override
   Widget build(BuildContext context) {
     final largura = MediaQuery.of(context).size.width;
 
     return Scaffold(
-      backgroundColor: Color(0xFFF5F2EE),
-
+      backgroundColor: const Color(0xFFF5F2EE),
       appBar: AppBar(
-        title: Text(nome),
+        title: Text(receita.nome),
         backgroundColor: Colors.transparent,
         elevation: 0,
         foregroundColor: Colors.black,
         actions: [
           IconButton(
-            icon: Icon(Icons.favorite_border),
+            icon: const Icon(Icons.favorite_border),
             onPressed: () {
               // futuro: salvar favorito
             },
           )
         ],
       ),
-
       body: SingleChildScrollView(
         child: Padding(
           padding: EdgeInsets.all(largura * 0.05),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              if (receita.imagem.isNotEmpty)
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: Image.network(
+                    receita.imagem,
+                    width: double.infinity,
+                    height: 200,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) =>
+                        const SizedBox.shrink(),
+                  ),
+                ),
+
+              if (receita.imagem.isNotEmpty) const SizedBox(height: 16),
+
               Text(
-                nome,
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                receita.nome,
+                style:
+                    const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
 
-              SizedBox(height: 10),
+              const SizedBox(height: 25),
 
-              Text(descricao),
-
-              SizedBox(height: 25),
-
-              // 🧾 INGREDIENTES
               Text(
-                "Ingredientes",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-
-              SizedBox(height: 10),
-
-              ...ingredientes.map(
-                (item) => ListTile(
-                  leading: Icon(Icons.check),
-                  title: Text(item),
+                receita.ingredientesFaltando.isEmpty
+                    ? "Você já tem todos os ingredientes"
+                    : "Ingredientes que faltam",
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
                 ),
               ),
 
-              SizedBox(height: 20),
+              const SizedBox(height: 10),
 
-              // 👨‍🍳 PREPARO
-              Text(
+              if (receita.ingredientesFaltando.isEmpty)
+                const ListTile(
+                  leading: Icon(Icons.check_circle, color: Colors.green),
+                  title: Text("Tudo certo para cozinhar!"),
+                )
+              else
+                ...receita.ingredientesFaltando.map(
+                  (item) => ListTile(
+                    leading: const Icon(Icons.shopping_cart_outlined),
+                    title: Text(item),
+                  ),
+                ),
+
+              const SizedBox(height: 20),
+
+              const Text(
                 "Modo de preparo",
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
 
-              SizedBox(height: 10),
+              const SizedBox(height: 10),
 
-              ...preparo.asMap().entries.map(
+              ..._passosPreparo.asMap().entries.map(
                 (entry) {
-                  int index = entry.key + 1;
-                  String passo = entry.value;
+                  final index = entry.key + 1;
+                  final passo = entry.value;
 
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 8),

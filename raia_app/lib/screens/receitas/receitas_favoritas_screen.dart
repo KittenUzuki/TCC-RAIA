@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:raia_app/models/receita.dart';
 import 'detalhe_receita_screen.dart';
 
 class ReceitasFavoritasScreen extends StatelessWidget {
@@ -44,16 +45,13 @@ class ReceitasFavoritasScreen extends StatelessWidget {
                         context,
                         MaterialPageRoute(
                           builder: (context) => DetalheReceitaScreen(
-                            nome: receita["nome"]!,
-                            descricao: receita["descricao"]!,
-                            ingredientes: [
-                              "Ingrediente 1",
-                              "Ingrediente 2",
-                            ],
-                            preparo: [
-                              "Passo 1",
-                              "Passo 2",
-                            ],
+                            receita: Receita(
+                              id: "1",
+                              nome: receita["nome"]!,
+                              imagem: "",
+                              ingredientesFaltando: [],
+                              modoPreparo: "Modo de preparo da receita",
+                            ),
                           ),
                         ),
                       );
