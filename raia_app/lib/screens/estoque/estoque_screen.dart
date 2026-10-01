@@ -1,9 +1,9 @@
-
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
-import 'package:raia_app/db.dart';
+import 'package:raia_app/models/ingrediente.dart';
+import 'package:raia_app/services/auth_service.dart';
+import 'package:raia_app/services/ingrediente_service.dart';
 
 import 'add_ingredientes_screen.dart';
 
@@ -13,13 +13,14 @@ class EstoqueScreen extends StatefulWidget {
 }
 
 class _EstoqueScreenState extends State<EstoqueScreen> {
-  final User? user = FirebaseAuth.instance.currentUser;
+  final _authService = AuthService();
+  final _ingredienteService = IngredienteService();
+  User? get user => _authService.usuarioAtual;
 
   Future<void> _deletarIngrediente(String docId) async {
     if (user == null) return;
     try {
-      // REATORAÇÃO: Apontar para a coleção correta para deletar
-      await db.collection('ingredientes').doc(docId).delete();
+      await _ingredienteService.remover(docId);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Ingrediente removido com sucesso!'), duration: Duration(seconds: 2)),
@@ -34,7 +35,7 @@ class _EstoqueScreenState extends State<EstoqueScreen> {
     }
   }
 
-  void _mostrarModalEdicao(BuildContext context, QueryDocumentSnapshot ingrediente) {
+  void _mostrarModalEdicao(BuildContext context, Ingrediente ingrediente) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -46,11 +47,18 @@ class _EstoqueScreenState extends State<EstoqueScreen> {
           padding: EdgeInsets.only(
             bottom: MediaQuery.of(context).viewInsets.bottom,
           ),
-          // A tela de edição já foi refatorada, então ela funcionará corretamente
           child: AddIngredientesScreen(ingrediente: ingrediente),
         );
       },
     );
+  }
+
+  String _formatarQuantidade(double quantidade) {
+    // Evita mostrar "2.0" quando a quantidade é um número inteiro.
+    if (quantidade == quantidade.roundToDouble()) {
+      return quantidade.toInt().toString();
+    }
+    return quantidade.toString();
   }
 
   @override
@@ -61,12 +69,8 @@ class _EstoqueScreenState extends State<EstoqueScreen> {
       ),
       body: user == null
           ? Center(child: Text("Faça login para ver seu estoque."))
-          : StreamBuilder<QuerySnapshot>(
-              // REATORAÇÃO: Alterar a consulta do StreamBuilder
-              stream: db
-                  .collection('ingredientes') // 1. Acessar a coleção principal
-                  .where('userId', isEqualTo: user!.uid)
-                  .snapshots(),
+          : StreamBuilder<List<Ingrediente>>(
+              stream: _ingredienteService.streamIngredientes(user!.uid),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return Center(child: CircularProgressIndicator());
@@ -74,7 +78,9 @@ class _EstoqueScreenState extends State<EstoqueScreen> {
                 if (snapshot.hasError) {
                   return Center(child: Text("Erro ao carregar o estoque: ${snapshot.error}"));
                 }
-                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+
+                final ingredientes = snapshot.data ?? [];
+                if (ingredientes.isEmpty) {
                   return Center(
                     child: Padding(
                       padding: const EdgeInsets.all(16.0),
@@ -83,29 +89,20 @@ class _EstoqueScreenState extends State<EstoqueScreen> {
                   );
                 }
 
-                final docs = snapshot.data!.docs;
-
                 return ListView.builder(
-                  itemCount: docs.length,
+                  itemCount: ingredientes.length,
                   itemBuilder: (context, index) {
-                    final doc = docs[index];
-                    final data = doc.data() as Map<String, dynamic>;
+                    final ingrediente = ingredientes[index];
 
-                    final nome = data['nome'] ?? 'Nome não disponível';
-                    final quantidade = data['quantidade'] ?? 0;
-                    final unidade = data['unidade'] ?? '';
-                    final Timestamp? validadeTimestamp = data['validade'];
-                    final validade = validadeTimestamp?.toDate();
-
-                    String subtitle = 'Qtd: $quantidade $unidade';
-                    if (validade != null) {
-                      subtitle += ' | Val: ${DateFormat('dd/MM/yyyy').format(validade)}';
+                    String subtitle = 'Qtd: ${_formatarQuantidade(ingrediente.quantidade)} ${ingrediente.unidade}';
+                    if (ingrediente.validade != null) {
+                      subtitle += ' | Val: ${DateFormat('dd/MM/yyyy').format(ingrediente.validade!)}';
                     }
 
                     return Dismissible(
-                      key: Key(doc.id),
+                      key: Key(ingrediente.id),
                       direction: DismissDirection.endToStart,
-                      onDismissed: (direction) => _deletarIngrediente(doc.id),
+                      onDismissed: (direction) => _deletarIngrediente(ingrediente.id),
                       background: Container(
                         color: Colors.red.shade700,
                         padding: EdgeInsets.symmetric(horizontal: 20),
@@ -113,14 +110,14 @@ class _EstoqueScreenState extends State<EstoqueScreen> {
                         child: Icon(Icons.delete, color: Colors.white),
                       ),
                       child: ListTile(
-                        title: Text(nome, style: TextStyle(fontWeight: FontWeight.bold)),
+                        title: Text(ingrediente.nome, style: TextStyle(fontWeight: FontWeight.bold)),
                         subtitle: Text(subtitle),
                         trailing: IconButton(
                           icon: Icon(Icons.edit, color: Theme.of(context).primaryColor),
-                          onPressed: () => _mostrarModalEdicao(context, doc),
+                          onPressed: () => _mostrarModalEdicao(context, ingrediente),
                           tooltip: 'Editar Ingrediente',
                         ),
-                        onTap: () => _mostrarModalEdicao(context, doc),
+                        onTap: () => _mostrarModalEdicao(context, ingrediente),
                       ),
                     );
                   },

@@ -27,32 +27,7 @@ void main() async {
     );
   }
 
-  // DIAGNOSTICO: testa a conexao com o Firestore automaticamente no startup.
-  // Nao precisa de login nem navegacao. Distingue conexao-quebrada de regra.
-  _diagFirestore();
-
   runApp(RaiaApp());
-}
-
-Future<void> _diagFirestore() async {
-  print('DIAG: kIsWeb=$kIsWeb, testando conexao com o Firestore...');
-  try {
-    final snap = await db
-        .collection('users')
-        .doc('__diag_probe__')
-        .get(const GetOptions(source: Source.server))
-        .timeout(const Duration(seconds: 15));
-    print('DIAG: >>> CONEXAO OK. (existe=${snap.exists})');
-  } on FirebaseException catch (e) {
-    print('DIAG: FirebaseException code=${e.code} plugin=${e.plugin} msg=${e.message}');
-    if (e.code == 'permission-denied') {
-      print('DIAG: >>> CONEXAO FUNCIONA - foi so a regra que negou. O problema NAO e conexao.');
-    } else if (e.code == 'unavailable') {
-      print('DIAG: >>> CLIENTE OFFLINE - a conexao com o Firestore realmente falhou.');
-    }
-  } catch (e) {
-    print('DIAG: erro inesperado: ${e.runtimeType} -> $e');
-  }
 }
 
 class RaiaApp extends StatelessWidget {
@@ -77,4 +52,3 @@ class RaiaApp extends StatelessWidget {
     );
   }
 }
-

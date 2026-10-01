@@ -1,12 +1,11 @@
-
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
-import 'package:raia_app/db.dart';
+import 'package:raia_app/models/ingrediente.dart';
+import 'package:raia_app/services/auth_service.dart';
+import 'package:raia_app/services/ingrediente_service.dart';
 
 class AddIngredientesScreen extends StatefulWidget {
-  final QueryDocumentSnapshot? ingrediente; // Ingrediente para edição
+  final Ingrediente? ingrediente; // Ingrediente para edição
 
   const AddIngredientesScreen({Key? key, this.ingrediente}) : super(key: key);
 
@@ -22,6 +21,8 @@ class _AddIngredientesScreenState extends State<AddIngredientesScreen> {
   String _unidadeSelecionada = 'un'; // Valor padrão
   bool _isLoading = false;
   late bool _isEditing;
+  final _authService = AuthService();
+  final _ingredienteService = IngredienteService();
 
   final List<String> _unidades = ['un', 'g', 'kg', 'ml', 'L'];
 
@@ -34,15 +35,20 @@ class _AddIngredientesScreenState extends State<AddIngredientesScreen> {
     _quantidadeController = TextEditingController();
 
     if (_isEditing) {
-      final data = widget.ingrediente!.data() as Map<String, dynamic>;
-      _nomeController.text = data['nome'] ?? '';
-      _quantidadeController.text = (data['quantidade'] ?? '').toString();
-      _unidadeSelecionada = data['unidade'] ?? 'un';
-      final Timestamp? validadeTimestamp = data['validade'];
-      if (validadeTimestamp != null) {
-        _dataValidade = validadeTimestamp.toDate();
-      }
+      final ingrediente = widget.ingrediente!;
+      _nomeController.text = ingrediente.nome;
+      _quantidadeController.text = _formatarQuantidadeParaEdicao(ingrediente.quantidade);
+      _unidadeSelecionada = ingrediente.unidade;
+      _dataValidade = ingrediente.validade;
     }
+  }
+
+  /// Evita mostrar "2.0" no campo de edição quando a quantidade é inteira.
+  String _formatarQuantidadeParaEdicao(double quantidade) {
+    if (quantidade == quantidade.roundToDouble()) {
+      return quantidade.toInt().toString();
+    }
+    return quantidade.toString();
   }
 
   @override
@@ -67,73 +73,59 @@ class _AddIngredientesScreenState extends State<AddIngredientesScreen> {
   }
 
   Future<void> _salvarIngrediente() async {
-    if (_formKey.currentState!.validate()) {
-      setState(() => _isLoading = true);
+    if (!_formKey.currentState!.validate()) return;
 
-      final user = FirebaseAuth.instance.currentUser;
-      if (user == null) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Erro: Usuário não autenticado.')),
-          );
-          setState(() => _isLoading = false);
-        }
-        return;
-      }
-      
-      try {
-        final collection = db.collection('ingredientes');
+    setState(() => _isLoading = true);
 
-        final data = {
-          'userId': user.uid,
-          'nome': _nomeController.text,
-          'quantidade': int.tryParse(_quantidadeController.text) ?? 0,
-          'unidade': _unidadeSelecionada,
-          'validade': _dataValidade != null ? Timestamp.fromDate(_dataValidade!) : null,
-        };
-
-        final Future<void> operacao;
-        if (_isEditing) {
-          operacao = collection.doc(widget.ingrediente!.id).update(data);
-        } else {
-          final dataToCreate = {
-            ...data,
-            'criadoEm': Timestamp.now(),
-          };
-          operacao = collection.add(dataToCreate).then((_) {});
-        }
-
-        await operacao.timeout(
-          const Duration(seconds: 10),
-          onTimeout: () {
-            throw Exception(
-              'TIMEOUT: o Firestore nao respondeu em 10s. '
-              'Provavel causa: banco em modo Datastore (nao Nativo) ou conexao bloqueada.',
-            );
-          },
+    final user = _authService.usuarioAtual;
+    if (user == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro: Usuário não autenticado.')),
         );
+        setState(() => _isLoading = false);
+      }
+      return;
+    }
 
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Ingrediente salvo com sucesso!')),
-          );
-          Navigator.pop(context);
-        }
+    // Aceita tanto "1" quanto "1,5" ou "1.5" como quantidade.
+    final quantidade =
+        double.tryParse(_quantidadeController.text.replaceAll(',', '.')) ?? 0;
 
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Erro ao salvar ingrediente: $e')),
-          );
-        }
-      } finally {
-        if (mounted) {
-          setState(() => _isLoading = false);
-        }
+    final ingrediente = Ingrediente(
+      id: _isEditing ? widget.ingrediente!.id : '',
+      userId: user.uid,
+      nome: _nomeController.text.trim(),
+      quantidade: quantidade,
+      unidade: _unidadeSelecionada,
+      validade: _dataValidade,
+    );
+
+    try {
+      if (_isEditing) {
+        await _ingredienteService.atualizar(ingrediente);
+      } else {
+        await _ingredienteService.adicionar(ingrediente);
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Ingrediente salvo com sucesso!')),
+        );
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao salvar ingrediente: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
       }
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -165,7 +157,7 @@ class _AddIngredientesScreenState extends State<AddIngredientesScreen> {
                       child: TextFormField(
                         controller: _quantidadeController,
                         decoration: InputDecoration(labelText: 'Quantidade'),
-                        keyboardType: TextInputType.number,
+                        keyboardType: TextInputType.numberWithOptions(decimal: true),
                         validator: (value) => value!.isEmpty ? 'Insira a quantidade' : null,
                       ),
                     ),

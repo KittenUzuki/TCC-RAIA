@@ -2,10 +2,9 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:raia_app/db.dart';
+import 'package:raia_app/services/auth_service.dart';
+import 'package:raia_app/services/ingrediente_service.dart';
 
-import '../../models/ingrediente.dart';
 import '../../models/receita.dart';
 import 'receitas_favoritas_screen.dart'; 
 import 'detalhe_receita_screen.dart';
@@ -22,6 +21,8 @@ class _ReceitasScreenState extends State<ReceitasScreen> {
       'http://localhost:5000/sugerir';
 
   final TextEditingController _buscaController = TextEditingController();
+  final _authService = AuthService();
+  final _ingredienteService = IngredienteService();
 
   Future<List<Receita>>? _futureReceitas;
   List<Receita> _todasReceitas = [];
@@ -59,19 +60,13 @@ class _ReceitasScreenState extends State<ReceitasScreen> {
   }
 
   Future<List<Receita>> buscarReceitasSugeridas() async {
-    final user = FirebaseAuth.instance.currentUser;
+    final user = _authService.usuarioAtual;
     if (user == null) {
       throw Exception('Usuário não autenticado.');
     }
 
-    final snapshot = await db
-      .collection('ingredientes')
-      .where('userId', isEqualTo: user.uid)
-      .get();
-
-    final nomes = snapshot.docs
-        .map((doc) => Ingrediente.fromFirestore(doc).nome)
-        .toList();
+    final ingredientes = await _ingredienteService.listarUmaVez(user.uid);
+    final nomes = ingredientes.map((ingrediente) => ingrediente.nome).toList();
 
     if (nomes.isEmpty) {
       return [];

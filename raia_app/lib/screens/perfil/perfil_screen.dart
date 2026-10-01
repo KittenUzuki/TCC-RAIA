@@ -1,9 +1,8 @@
-
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:raia_app/db.dart';
 import 'package:raia_app/screens/auth/login_screen.dart';
+import 'package:raia_app/services/auth_service.dart';
+import 'package:raia_app/services/ingrediente_service.dart';
+import 'package:raia_app/services/user_service.dart';
 
 class PerfilScreen extends StatefulWidget {
   @override
@@ -11,8 +10,9 @@ class PerfilScreen extends StatefulWidget {
 }
 
 class _PerfilScreenState extends State<PerfilScreen> {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = db;
+  final _authService = AuthService();
+  final _userService = UserService();
+  final _ingredienteService = IngredienteService();
 
   bool _isLoading = true;
   String? _nome;
@@ -28,33 +28,24 @@ class _PerfilScreenState extends State<PerfilScreen> {
   }
 
   Future<void> _fetchUserData() async {
-    final user = _auth.currentUser;
+    final user = _authService.usuarioAtual;
     if (user == null) {
       if (mounted) setState(() => _isLoading = false);
       return;
     }
 
     try {
-        print("BUSCANDO USER: ${user.uid}");
+      final perfil = await _userService.buscarPerfil(user.uid);
 
-        final docSnapshot = await _firestore
-            .collection('users')
-            .doc(user.uid)
-            .get(const GetOptions(source: Source.server));
-
-        print("DOCUMENTO ENCONTRADO: ${docSnapshot.exists}");
-        print("DADOS: ${docSnapshot.data()}");
-
-      if (docSnapshot.exists && mounted) {
+      if (mounted) {
         setState(() {
-          _nome = docSnapshot.data()?['nome'];
+          _nome = perfil?.nome;
           _email = user.email;
           nomeController.text = _nome ?? '';
           emailController.text = _email ?? '';
         });
       }
     } catch (e) {
-      print(">>>>>> FIREBASE ERROR CAPTURADO: $e");
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Erro ao buscar dados: $e")),
@@ -71,7 +62,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
 
   Future<void> _logout() async {
     try {
-      await _auth.signOut();
+      await _authService.logout();
       if (mounted) {
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(builder: (context) => LoginScreen()),
@@ -113,20 +104,17 @@ class _PerfilScreenState extends State<PerfilScreen> {
   }
 
   Future<void> _deleteAccount() async {
-    final user = _auth.currentUser;
+    final user = _authService.usuarioAtual;
     if (user == null) return;
 
     if (mounted) setState(() => _isLoading = true);
 
     try {
-      final ingredientesQuery = await _firestore.collection('ingredientes').where('userId', isEqualTo: user.uid).get();
-      for (var doc in ingredientesQuery.docs) {
-        await doc.reference.delete();
-      }
-      // CORREÇÃO: Coleção alterada para "users"
-      await _firestore.collection('users').doc(user.uid).delete();
-
-      await user.delete();
+      // Ordem importa: apaga os dados no Firestore ANTES de excluir a conta,
+      // porque depois de excluída as regras não autorizam mais esse uid.
+      await _ingredienteService.removerTodosDoUsuario(user.uid);
+      await _userService.excluirPerfil(user.uid);
+      await _authService.excluirConta();
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -137,21 +125,17 @@ class _PerfilScreenState extends State<PerfilScreen> {
           (route) => false,
         );
       }
-
-    } on FirebaseAuthException catch (e) {
-       if (mounted) setState(() => _isLoading = false);
-       String message = "Ocorreu um erro ao excluir a conta.";
-       if (e.code == 'requires-recent-login') {
-         message = "Esta é uma operação sensível. Por favor, faça login novamente antes de excluir sua conta.";
-         _logout();
-       }
-       if(mounted){
-         ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(message), backgroundColor: Colors.red),
-          );
-       }
+    } on AuthException catch (e) {
+      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message), backgroundColor: Colors.red),
+        );
+      }
+      if (e.code == 'requires-recent-login') {
+        _logout();
+      }
     } catch (e) {
-        print(">>>>>> FIREBASE ERROR AO DELETAR: $e");
       if (mounted) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(

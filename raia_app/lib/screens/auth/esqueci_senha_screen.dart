@@ -1,6 +1,5 @@
-
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:raia_app/services/auth_service.dart';
 class EsqueciSenhaScreen extends StatefulWidget {
   @override
   _EsqueciSenhaScreenState createState() => _EsqueciSenhaScreenState();
@@ -8,6 +7,7 @@ class EsqueciSenhaScreen extends StatefulWidget {
 class _EsqueciSenhaScreenState extends State<EsqueciSenhaScreen> {
   final _emailController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
+  final _authService = AuthService();
   bool _isLoading = false;
   Future<void> _sendPasswordResetEmail() async {
     if (_formKey.currentState!.validate()) {
@@ -15,9 +15,7 @@ class _EsqueciSenhaScreenState extends State<EsqueciSenhaScreen> {
         _isLoading = true;
       });
       try {
-        await FirebaseAuth.instance.sendPasswordResetEmail(
-          email: _emailController.text.trim(),
-        );
+        await _authService.enviarEmailRedefinicaoSenha(_emailController.text);
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -27,15 +25,11 @@ class _EsqueciSenhaScreenState extends State<EsqueciSenhaScreen> {
           );
           Navigator.of(context).pop(); // Volta para a tela de login
         }
-      } on FirebaseAuthException catch (e) {
+      } on AuthException catch (e) {
         if (context.mounted) {
-          String errorMessage = "Ocorreu um erro. Tente novamente.";
-          if (e.code == 'user-not-found') {
-            errorMessage = "Nenhum usuário encontrado com este email.";
-          }
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(errorMessage),
+              content: Text(e.message),
               backgroundColor: Colors.red,
             ),
           );

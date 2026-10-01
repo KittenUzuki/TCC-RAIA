@@ -1,6 +1,5 @@
-
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:raia_app/services/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -10,11 +9,13 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final emailController = TextEditingController();
   final senhaController = TextEditingController();
+  final _authService = AuthService();
 
   void signIn() async {
     // show loading circle
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (context) {
         return const Center(
           child: CircularProgressIndicator(),
@@ -23,21 +24,26 @@ class _LoginScreenState extends State<LoginScreen> {
     );
 
     try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: emailController.text.trim(),
-        password: senhaController.text.trim(),
+      await _authService.login(
+        email: emailController.text,
+        senha: senhaController.text,
       );
       // pop the loading circle
       if (mounted) {
         Navigator.pop(context);
         Navigator.pushReplacementNamed(context, '/main');
       }
-    } on FirebaseAuthException catch (e) {
+    } on AuthException catch (e) {
       // pop the loading circle
       if (mounted) {
         Navigator.pop(context);
-        // show error message
-        showErrorMessage(e.code);
+        // show error message já traduzida (em vez de e.code cru)
+        showErrorMessage(e.message);
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context);
+        showErrorMessage('Ocorreu um erro inesperado. Tente novamente.');
       }
     }
   }

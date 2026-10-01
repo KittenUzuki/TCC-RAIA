@@ -1,15 +1,13 @@
-
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:raia_app/db.dart';
 import 'package:raia_app/screens/auth/login_screen.dart';
+import 'package:raia_app/services/auth_service.dart';
 
 class CadastroScreen extends StatelessWidget {
   final nomeController = TextEditingController();
   final emailController = TextEditingController();
   final senhaController = TextEditingController();
   final confirmarController = TextEditingController();
+  final _authService = AuthService();
 
   void _cadastrarUsuario(BuildContext context) async {
     // Validações Manuais
@@ -28,32 +26,11 @@ class CadastroScreen extends StatelessWidget {
     }
 
     try {
-      UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: emailController.text.trim(),
-        password: senhaController.text.trim(),
+      await _authService.cadastrar(
+        nome: nomeController.text,
+        email: emailController.text,
+        senha: senhaController.text,
       );
-
-      print('DEBUG: Usuário autenticado criado com UID: ${userCredential.user?.uid}');
-
-      if (userCredential.user != null) {
-        print('DEBUG: Tentando criar documento no Firestore para UID: ${userCredential.user!.uid}');
-        await db.collection('users').doc(userCredential.user!.uid).set({
-          'nome': nomeController.text.trim(),
-          'email': emailController.text.trim(),
-          'dataCriacao': FieldValue.serverTimestamp(),
-        }).timeout(
-          const Duration(seconds: 10),
-          onTimeout: () {
-            throw Exception(
-              'TIMEOUT: a escrita no Firestore nao respondeu em 10s. '
-              'Provavel causa: banco em modo Datastore (nao Nativo) ou conexao bloqueada.',
-            );
-          },
-        );
-        print('DEBUG: Documento no Firestore criado com sucesso!');
-      } else {
-        print('DEBUG: userCredential.user é nulo após o registro na autenticação.');
-      }
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -62,35 +39,23 @@ class CadastroScreen extends StatelessWidget {
             backgroundColor: Colors.green,
           ),
         );
-        
+
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(builder: (context) => LoginScreen()),
           (route) => false,
         );
       }
-
-    } on FirebaseAuthException catch (e) {
-      print('DEBUG: FirebaseAuthException capturada: $e');
-      String mensagemErro = 'Ocorreu um erro desconhecido.';
-      if (e.code == 'weak-password') {
-        mensagemErro = 'A senha fornecida é muito fraca (mínimo 6 caracteres).';
-      } else if (e.code == 'email-already-in-use') {
-        mensagemErro = 'O e-mail fornecido já está em uso.';
-      } else if (e.code == 'invalid-email') {
-        mensagemErro = 'O formato do e-mail é inválido.';
-      }
-      
+    } on AuthException catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(mensagemErro)),
+          SnackBar(content: Text(e.message)),
         );
       }
     } catch (e) {
-      print('DEBUG: Outro erro capturado durante o registro: $e');
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erro ao gravar no Firestore: $e'),
+            content: Text('Erro inesperado ao criar a conta. Tente novamente.'),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 8),
           ),
