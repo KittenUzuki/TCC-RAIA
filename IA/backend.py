@@ -65,7 +65,7 @@ def sugerir_receitas(request):
             resp = requests.get(
                 "https://www.themealdb.com/api/json/v1/1/filter.php",
                 params={"i": ing},
-                timeout=4
+                timeout=16
             )
             meals = resp.json().get("meals") or []
             print(f"3. Busca por '{ing}': {len(meals)} receitas encontradas.")
