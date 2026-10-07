@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:raia_app/services/auth_service.dart';
 import 'package:raia_app/services/ingrediente_service.dart';
+import 'package:raia_app/config/api_config.dart';
 
 import '../../models/receita.dart';
 import 'receitas_favoritas_screen.dart'; 
@@ -17,8 +18,8 @@ class ReceitasScreen extends StatefulWidget {
 }
 
 class _ReceitasScreenState extends State<ReceitasScreen> {
-  static const String _endpointReceitasSugeridas =
-      'http://localhost:5000/sugerir';
+  static String get _endpointReceitasSugeridas =>
+      '${ApiConfig.baseUrl}/sugerir';
 
   final TextEditingController _buscaController = TextEditingController();
   final _authService = AuthService();
@@ -80,7 +81,12 @@ class _ReceitasScreenState extends State<ReceitasScreen> {
           headers: {'Content-Type': 'application/json'},
           body: jsonEncode({'ingredientes': nomes}),
         )
-        .timeout(const Duration(seconds: 20));
+        // O backend faz várias traduções em sequência por receita, o que
+        // pode levar bem mais que alguns segundos. 60s é um valor
+        // generoso pra evitar falso-timeout; o ideal a longo prazo é
+        // deixar o backend mais rápido (ver IA/backend.py), não só
+        // esperar mais tempo por ele.
+        .timeout(const Duration(seconds: 60));
 
     if (resposta.statusCode != 200) {
       throw Exception(
@@ -151,7 +157,20 @@ class _ReceitasScreenState extends State<ReceitasScreen> {
                 future: _futureReceitas,
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator());
+                    return const Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          CircularProgressIndicator(),
+                          SizedBox(height: 16),
+                          Text(
+                            "Buscando e traduzindo receitas...\nIsso pode levar um minuto.",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    );
                   }
 
                   if (snapshot.hasError) {

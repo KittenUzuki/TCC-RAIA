@@ -1,8 +1,3 @@
-functions-framework==3.*
-requests
-googletrans==4.0.0rc1
 flask
-
-gcloud functions deploy sugerir_receitas \
-  --runtime python311 --trigger-http --allow-unauthenticated \
-  --entry-point sugerir_receitas --source IA/
+requests
+deep-translator
