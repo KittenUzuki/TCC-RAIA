@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:raia_app/services/auth_service.dart';
 import 'package:raia_app/services/ingrediente_service.dart';
-import 'package:raia_app/config/api_config.dart';
+//import 'package:raia_app/config/api_config.dart'; //descomente para rodar app
 
 import '../../models/receita.dart';
 import 'receitas_favoritas_screen.dart'; 
@@ -19,7 +19,8 @@ class ReceitasScreen extends StatefulWidget {
 
 class _ReceitasScreenState extends State<ReceitasScreen> {
   static String get _endpointReceitasSugeridas =>
-      '${ApiConfig.baseUrl}/sugerir';
+      'http://localhost:5000/sugerir';
+      //'${ApiConfig.baseUrl}/sugerir'; //descomente para rodar app
 
   final TextEditingController _buscaController = TextEditingController();
   final _authService = AuthService();
