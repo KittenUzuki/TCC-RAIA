@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:raia_app/screens/auth/login_screen.dart';
 import 'package:raia_app/services/auth_service.dart';
 import 'package:raia_app/services/ingrediente_service.dart';
@@ -13,10 +14,13 @@ class _PerfilScreenState extends State<PerfilScreen> {
   final _authService = AuthService();
   final _userService = UserService();
   final _ingredienteService = IngredienteService();
+  final _picker = ImagePicker();
 
   bool _isLoading = true;
+  bool _enviandoFoto = false;
   String? _nome;
   String? _email;
+  String? _fotoUrl;
 
   final nomeController = TextEditingController();
   final emailController = TextEditingController();
@@ -41,6 +45,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
         setState(() {
           _nome = perfil?.nome;
           _email = user.email;
+          _fotoUrl = perfil?.fotoUrl;
           nomeController.text = _nome ?? '';
           emailController.text = _email ?? '';
         });
@@ -57,6 +62,79 @@ class _PerfilScreenState extends State<PerfilScreen> {
           _isLoading = false;
         });
       }
+    }
+  }
+
+  Future<void> _escolherFoto() async {
+    final acao = await showModalBottomSheet<String>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Wrap(
+          children: [
+            ListTile(
+              leading: Icon(Icons.photo_camera),
+              title: Text('Tirar foto'),
+              onTap: () => Navigator.pop(ctx, 'camera'),
+            ),
+            ListTile(
+              leading: Icon(Icons.photo_library),
+              title: Text('Escolher da galeria'),
+              onTap: () => Navigator.pop(ctx, 'galeria'),
+            ),
+            if (_fotoUrl != null)
+              ListTile(
+                leading: Icon(Icons.delete_outline, color: Colors.red),
+                title: Text('Remover foto', style: TextStyle(color: Colors.red)),
+                onTap: () => Navigator.pop(ctx, 'remover'),
+              ),
+          ],
+        ),
+      ),
+    );
+
+    if (acao == null) return;
+
+    final user = _authService.usuarioAtual;
+    if (user == null) return;
+
+    setState(() => _enviandoFoto = true);
+
+    try {
+      if (acao == 'remover') {
+        await _userService.removerFotoPerfil(user.uid);
+        if (mounted) setState(() => _fotoUrl = null);
+      } else {
+        // Reduz a imagem já na hora de escolher: upload mais rápido e
+        // menos gasto no Storage.
+        final arquivo = await _picker.pickImage(
+          source: acao == 'camera' ? ImageSource.camera : ImageSource.gallery,
+          maxWidth: 800,
+          maxHeight: 800,
+          imageQuality: 80,
+        );
+
+        // Usuário cancelou a seleção: não faz nada.
+        if (arquivo == null) return;
+
+        final bytes = await arquivo.readAsBytes();
+        final url = await _userService.enviarFotoPerfil(
+          user.uid,
+          bytes,
+          contentType: arquivo.mimeType ?? 'image/jpeg',
+        );
+        if (mounted) setState(() => _fotoUrl = url);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Não foi possível atualizar a foto: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _enviandoFoto = false);
     }
   }
 
@@ -110,9 +188,11 @@ class _PerfilScreenState extends State<PerfilScreen> {
     if (mounted) setState(() => _isLoading = true);
 
     try {
-      // Ordem importa: apaga os dados no Firestore ANTES de excluir a conta,
-      // porque depois de excluída as regras não autorizam mais esse uid.
+      // Ordem importa: apaga os dados (Firestore e Storage) ANTES de
+      // excluir a conta, porque depois de excluída as regras não
+      // autorizam mais esse uid.
       await _ingredienteService.removerTodosDoUsuario(user.uid);
+      await _userService.excluirArquivoFoto(user.uid);
       await _userService.excluirPerfil(user.uid);
       await _authService.excluirConta();
 
@@ -145,6 +225,45 @@ class _PerfilScreenState extends State<PerfilScreen> {
     }
   }
 
+  Widget _buildAvatar() {
+    final temFoto = _fotoUrl != null && _fotoUrl!.isNotEmpty;
+
+    return Stack(
+      children: [
+        CircleAvatar(
+          radius: 48,
+          backgroundColor: Colors.grey[300],
+          backgroundImage: temFoto ? NetworkImage(_fotoUrl!) : null,
+          // Se a imagem não carregar (sem internet, por exemplo), cai
+          // no ícone padrão em vez de ficar um círculo vazio.
+          onBackgroundImageError: temFoto ? (_, __) {} : null,
+          child: temFoto
+              ? null
+              : Icon(Icons.person, size: 48, color: Colors.grey[700]),
+        ),
+        if (_enviandoFoto)
+          Positioned.fill(
+            child: CircleAvatar(
+              backgroundColor: Colors.black38,
+              child: CircularProgressIndicator(color: Colors.white),
+            ),
+          ),
+        Positioned(
+          bottom: 0,
+          right: 0,
+          child: InkWell(
+            onTap: _enviandoFoto ? null : _escolherFoto,
+            child: CircleAvatar(
+              radius: 16,
+              backgroundColor: Colors.green,
+              child: Icon(Icons.camera_alt, size: 16, color: Colors.white),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final largura = MediaQuery.of(context).size.width;
@@ -161,11 +280,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
                     children: [
                       Text("Minha Conta", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
                       SizedBox(height: 20),
-                      CircleAvatar(
-                        radius: 40,
-                        backgroundColor: Colors.grey[300],
-                        child: Icon(Icons.person, size: 40, color: Colors.grey[700]),
-                      ),
+                      _buildAvatar(),
                       SizedBox(height: 20),
                       TextField(controller: nomeController, readOnly: true, decoration: InputDecoration(labelText: "Nome", border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)))),
                       SizedBox(height: 15),

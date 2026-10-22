@@ -1,0 +1,22 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // Foto de perfil: /perfil/{uid}/foto.jpg
+    // Cada usuário só lê/escreve a própria foto.
+    match /perfil/{userId}/{fileName} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+
+      // Limite de 5MB e só aceita imagem (evita abuso e custo no Storage).
+      allow create, update: if request.auth != null
+                             && request.auth.uid == userId
+                             && request.resource.size < 5 * 1024 * 1024
+                             && request.resource.contentType.matches('image/.*');
+
+      allow delete: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Qualquer outro caminho fica bloqueado por padrão.
+  }
+}

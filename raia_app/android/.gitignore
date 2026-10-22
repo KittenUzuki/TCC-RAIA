@@ -12,3 +12,31 @@ GeneratedPluginRegistrant.java
 key.properties
 **/*.keystore
 **/*.jks
+# SO / editores
+.DS_Store
+.idx/
+.idea/
+.vscode/
+*.iml
+
+# Python (IA)
+IA/venv/
+venv/
+__pycache__/
+*.pyc
+
+# Flutter / Dart
+raia_app/build/
+raia_app/.dart_tool/
+raia_app/.flutter-plugins
+raia_app/.flutter-plugins-dependencies
+raia_app/android/.gradle/
+raia_app/android/build/
+raia_app/android/local.properties
+raia_app/.kotlin/
+raia_app/android/.kotlin/
+
+# Node / Firebase CLI
+node_modules/
+raia_app/.firebase/
+*.log

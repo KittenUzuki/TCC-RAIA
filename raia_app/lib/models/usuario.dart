@@ -7,6 +7,8 @@ class Usuario {
   final String uid;
   final String nome;
   final String email;
+
+  /// URL da foto de perfil no Firebase Storage.
   final String? fotoUrl;
   final DateTime? criadoEm;
 
