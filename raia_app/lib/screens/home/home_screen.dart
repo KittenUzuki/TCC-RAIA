@@ -7,6 +7,7 @@ import 'package:raia_app/screens/receitas/receitas_screen.dart';
 // estoque
 import '../estoque/add_ingredientes_screen.dart';
 import '../estoque/estoque_screen.dart';
+import '../estoque/voz_ingredientes_screen.dart';
 
 /// Quantos itens mostrar na seção "Itens recentes".
 const int _limiteItensRecentes = 3;
@@ -115,6 +116,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                 builder: (context) => AddIngredientesScreen(),
                               ),
                             );
+                          }),
+                          buildButton("Adicionar/remover por voz", () {
+                            abrirVozIngredientes(context);
                           }),
                           buildButton("Ver estoque", () {
                             Navigator.push(

@@ -9,6 +9,7 @@ import 'home/home_screen.dart';
 import 'perfil/perfil_screen.dart';
 import 'estoque/add_ingredientes_screen.dart';
 import 'estoque/estoque_screen.dart';
+import 'estoque/voz_ingredientes_screen.dart';
 import 'receitas/receitas_screen.dart';
 
 
@@ -48,13 +49,16 @@ class _MainScreenState extends State<MainScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                "Adicionar Ingrediente",
+                "Adicionar ou remover alimentos",
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
 
               SizedBox(height: 20),
 
-              _buildOpcao(Icons.mic, "Por voz", () {}),
+              _buildOpcao(Icons.mic, "Por voz", () {
+                Navigator.pop(context); // fecha o menu de opções
+                abrirVozIngredientes(context);
+              }),
               _buildOpcao(Icons.receipt, "Foto da nota", () {}),
               _buildOpcao(Icons.qr_code, "QR Code da nota", () {}),
               // CORREÇÃO APLICADA AQUI

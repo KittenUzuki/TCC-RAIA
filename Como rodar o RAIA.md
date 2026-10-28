@@ -103,3 +103,43 @@ O celular e o computador precisam estar na **mesma rede Wi-Fi** pra isso funcion
 Terminal 1 (IA):       venv\Scripts\activate  →  python server.py
 Terminal 2 (raia_app): flutter run
 ```
+
+---
+
+## Comando de voz (adicionar/remover alimentos falando)
+
+Depois de atualizar o projeto, rode **uma vez** dentro de `raia_app`:
+
+```
+flutter pub get
+```
+
+(no Mac/iOS, se der erro de pods: `cd ios && pod install`)
+
+**Onde fica:** botão **+** → **Por voz**, ícone de microfone no topo da tela **Meu Estoque**, ou o botão **Adicionar/remover por voz** na Home.
+
+**Exemplos do que dá pra falar:**
+
+| Frase | O que acontece |
+| --- | --- |
+| "adicionar 2 kg de arroz" | cria Arroz 2 kg (ou soma se já existir) |
+| "comprei meia dúzia de ovos e um litro de leite" | soma 6 ovos e 1 L de leite |
+| "coloca dois quilos e meio de batata" | 2,5 kg de batata |
+| "usei 3 ovos" / "tira 300 gramas de queijo" | subtrai do estoque (se zerar, apaga) |
+| "remover o leite" / "acabou o café" / "o leite acabou" | apaga o item |
+| "adicionar 2 ovos e remover o queijo" | vários comandos de uma vez |
+
+O app sempre mostra uma prévia ("O que vai mudar") e só grava quando você toca em **Confirmar**. O texto reconhecido fica num campo editável: dá pra corrigir uma palavra errada ou digitar o comando. Converte g↔kg e ml↔L sozinho e ignora acento/plural/maiúscula ao procurar o item.
+
+**Onde funciona:**
+
+| Onde | Observação |
+| --- | --- |
+| Celular Android | ✅ Usa o reconhecimento do Google (precisa do app Google instalado) |
+| Emulador Android | ⚠️ No emulador, abra os "..." (Extended controls) → Microphone → ligue **"Virtual microphone uses host audio input"**. Use uma imagem com Google Play |
+| Chrome (`flutter run -d chrome`) | ✅ O Chrome pede permissão do microfone na primeira vez |
+| iPhone / Mac | ✅ Pede permissão de microfone e de reconhecimento de fala |
+
+Se o microfone não estiver disponível, a tela avisa e você pode **digitar** o comando no campo — a interpretação é a mesma.
+
+**Testes da interpretação das frases:** `flutter test test/comando_voz_test.dart`

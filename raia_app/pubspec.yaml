@@ -41,6 +41,8 @@ dependencies:
   firebase_storage: ^12.4.10
   intl: ^0.20.2
   http: ^1.2.2
+  # Reconhecimento de voz (adicionar/remover alimentos falando)
+  speech_to_text: ^7.0.0
 
 dev_dependencies:
   flutter_test:

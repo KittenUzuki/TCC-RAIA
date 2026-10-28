@@ -28,5 +28,9 @@
 	<string>MainMenu</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>O RAIA usa o microfone para você adicionar ou remover alimentos do estoque falando.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>O RAIA transforma sua fala em texto para entender quais alimentos adicionar ou remover.</string>
 </dict>
 </plist>

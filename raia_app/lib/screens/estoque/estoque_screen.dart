@@ -6,6 +6,7 @@ import 'package:raia_app/services/auth_service.dart';
 import 'package:raia_app/services/ingrediente_service.dart';
 
 import 'add_ingredientes_screen.dart';
+import 'voz_ingredientes_screen.dart';
 
 class EstoqueScreen extends StatefulWidget {
   @override
@@ -66,6 +67,13 @@ class _EstoqueScreenState extends State<EstoqueScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text("Meu Estoque"),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.mic),
+            tooltip: 'Adicionar ou remover por voz',
+            onPressed: () => abrirVozIngredientes(context),
+          ),
+        ],
       ),
       body: user == null
           ? Center(child: Text("Faça login para ver seu estoque."))
