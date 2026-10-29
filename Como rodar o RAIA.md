@@ -143,3 +143,9 @@ O app sempre mostra uma prévia ("O que vai mudar") e só grava quando você toc
 Se o microfone não estiver disponível, a tela avisa e você pode **digitar** o comando no campo — a interpretação é a mesma.
 
 **Testes da interpretação das frases:** `flutter test test/comando_voz_test.dart`
+
+
+
+
+
+   & "$env:LOCALAPPDATA\Android\sdk\platform-tools\adb.exe" reverse tcp:5000 tcp:5000
