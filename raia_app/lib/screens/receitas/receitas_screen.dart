@@ -18,8 +18,10 @@ class ReceitasScreen extends StatefulWidget {
 }
 
 class _ReceitasScreenState extends State<ReceitasScreen> {
-  static String get _endpointReceitasSugeridas =>
-      'http://localhost:5000/sugerir';
+    static const String _endpointReceitasSugeridas =
+        'http://localhost:5000/sugerir';
+  //static String get _endpointReceitasSugeridas =>
+      //'http://localhost:5000/sugerir';
       //'${ApiConfig.baseUrl}/sugerir'; //descomente para rodar app
 
   final TextEditingController _buscaController = TextEditingController();
