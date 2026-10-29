@@ -12,6 +12,7 @@ import 'estoque/estoque_screen.dart';
 import 'estoque/voz_ingredientes_screen.dart';
 import 'receitas/receitas_screen.dart';
 import 'estoque/adicionar_por_codigo.dart';
+import 'estoque/foto_ingredientes_screen.dart';
 
 class MainScreen extends StatefulWidget {
   @override
@@ -59,7 +60,10 @@ class _MainScreenState extends State<MainScreen> {
                 Navigator.pop(context); // fecha o menu de opções
                 abrirVozIngredientes(context);
               }),
-              _buildOpcao(Icons.receipt, "Foto da nota", () {}),
+              _buildOpcao(Icons.receipt_long, "Foto da nota ou lista", () {
+                Navigator.pop(context); // fecha o menu de opções
+                abrirFotoIngredientes(this.context);
+              }),
               _buildOpcao(Icons.qr_code, "QR Code / código de barras", () {
                 Navigator.pop(context); // fecha o menu de opções
                 // this.context = o contexto da tela (o do menu já fechou)

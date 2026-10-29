@@ -144,8 +144,47 @@ Se o microfone não estiver disponível, a tela avisa e você pode **digitar** o
 
 **Testes da interpretação das frases:** `flutter test test/comando_voz_test.dart`
 
+---
 
+## Receitas em português (arquivo local, sem esperar a API)
 
+A tela de Receitas **não usa mais o servidor Flask**. As receitas ficam no arquivo `raia_app/assets/receitas_pt.json`, que já vem traduzido, e o app procura nele na hora, sem internet.
 
+**Gerar o arquivo (só uma vez, ou quando quiser atualizar):** dentro de `IA`, com o venv ativado:
 
-   & "$env:LOCALAPPDATA\Android\sdk\platform-tools\adb.exe" reverse tcp:5000 tcp:5000
+```
+pip install -r requirements.txt
+python gerar_receitas_pt.py
+```
+
+O script baixa **todas** as receitas do TheMealDB, traduz nome, ingredientes, medidas (libras e onças viram gramas) e modo de preparo para português e grava o arquivo. Leva alguns minutos na primeira vez. Se a internet cair, rode de novo: ele continua de onde parou (cache em `IA/cache_traducoes.json`).
+
+Depois disso, **pare e rode o app de novo** (`flutter run`). Hot reload não recarrega arquivos de assets.
+
+**Na tela de Receitas:**
+- As sugestões são as receitas que usam itens do seu estoque, das que faltam menos ingredientes para as que faltam mais (as que usam itens perto de vencer sobem).
+- A busca procura em **todas** as receitas: nome, ingrediente ("frango", "chocolate"), categoria ("sobremesa", "massas") ou país ("italiana").
+- Água, gelo, sal e pimenta-do-reino não contam como "faltando".
+- O detalhe da receita mostra a lista completa de ingredientes, com ✅ para o que você tem e 🛒 para o que falta.
+
+Se a tela mostrar "O arquivo de receitas ainda não foi gerado", é porque o script ainda não foi rodado.
+
+## QR code / código de barras
+
+No botão "+" escolha **QR Code / código de barras**. A câmera abre, lê o código do produto e o app consulta o nome no Open Food Facts (base gratuita, não precisa de chave). O formulário "Manual" abre já com o nome preenchido; é só conferir quantidade, unidade e validade.
+
+- Precisa de internet para buscar o nome. Sem internet, ou se o produto não estiver na base, o formulário abre vazio para você digitar.
+- Rode `flutter pub get` depois de baixar estas mudanças (foi adicionado o pacote `mobile_scanner`).
+- A câmera não funciona no emulador sem câmera configurada; teste num celular de verdade.
+- Permissões já configuradas: `CAMERA` no Android e `NSCameraUsageDescription` no iOS/macOS.
+
+## Adicionar por foto (cupom fiscal ou lista)
+
+No botão "+" escolha **Foto da nota ou lista**. Tire uma foto (ou escolha da galeria) do cupom do mercado ou de uma lista escrita. O app lê as palavras da foto no próprio celular (ML Kit do Google, sem internet) e mostra os alimentos encontrados com nome, quantidade e unidade. Você pode corrigir, desmarcar ou adicionar itens; ao salvar, ele mostra o que vai mudar e soma com o que já existe no estoque, igual ao comando de voz.
+
+- Cupom: entende linhas como `ARROZ T1 5KG 1 UN X 25,90` (vira 5 kg de arroz), `LEITE 1L 6 UN X 4,79` (6 L) e itens a peso (`BANANA 1,235 KG`). Cabeçalho, total, pagamento e endereço são ignorados.
+- Lista: cada linha é lida como no comando de voz (`2 kg de arroz`, `6 ovos`, `leite`).
+- Dicas para a foto: cupom esticado e reto, boa luz, sem sombra, ocupando a tela toda.
+- Funciona no Android e no iPhone. No navegador/macOS use "Digitar texto" (serve também para testar no emulador).
+- Depois de baixar: `flutter pub get`. No iPhone o mínimo passou a ser iOS 15.5 (exigência do ML Kit); o `ios/Podfile` já está configurado — se der erro de pods, rode `cd ios && pod install --repo-update`.
+- Testes do leitor: `flutter test test/texto_foto_parser_test.dart`.

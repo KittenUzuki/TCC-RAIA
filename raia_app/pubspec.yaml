@@ -43,7 +43,10 @@ dependencies:
   http: ^1.2.2
   # Reconhecimento de voz (adicionar/remover alimentos falando)
   speech_to_text: ^7.0.0
-  mobile_scanner: ^7.4.2
+  # Leitura de QR code / código de barras pela câmera
+  mobile_scanner: ^7.0.0
+  # Leitura do texto de fotos (cupom fiscal / lista), roda no celular
+  google_mlkit_text_recognition: ^0.16.0
 
 dev_dependencies:
   flutter_test:
@@ -66,6 +69,10 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+
+  # Receitas em português geradas por IA/gerar_receitas_pt.py
+  assets:
+    - assets/receitas_pt.json
 
   # To add assets to your application, add an assets section, like this:
   # assets:
