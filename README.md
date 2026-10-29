@@ -50,23 +50,3 @@ Reduzir o desperdício de alimentos e facilitar o planejamento de refeições at
 
 ---
 *Projeto desenvolvido como Trabalho de Conclusão de Curso – COTUCA 2026.*
-
-1. Destravar o Flask
-
-O erro acontece porque o Flask nunca foi instalado. Faltou criar o ambiente virtual e instalar as dependências nele. No PowerShell:
-
-powershell
-cd D:\Github\TCC-RAIA\IA
-python -m venv .venv
-.venv\Scripts\Activate.ps1
-pip install flask requests deep-translator
-python server.py
-Depois do Activate.ps1, o terminal passa a mostrar (.venv) no começo da linha. Se não aparecer, o ambiente não está ativo.
-Se o PowerShell bloquear o Activate.ps1, rode antes: Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass.
-Usei pip install flask requests deep-translator direto, em vez de -r requirements.txt, porque o seu requirements.txt ainda pode ter aquele comando do gcloud colado, que quebra o pip.
-Deve aparecer Running on http://127.0.0.1:5000. Deixe esse terminal aberto.
-Nas próximas vezes, só ative o ambiente e rode o servidor:
-powershell
-  cd D:\Github\TCC-RAIA\IA
-  .venv\Scripts\Activate.ps1
-  python server.py

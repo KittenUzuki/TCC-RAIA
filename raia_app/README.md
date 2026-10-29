@@ -1,4 +1,4 @@
-# raia_app
+# rira_app
 
 A new Flutter project.
 

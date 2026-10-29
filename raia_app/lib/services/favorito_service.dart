@@ -11,7 +11,7 @@ class FavoritoService {
   /// Todas as receitas favoritas do usuário, da mais recente pra mais antiga.
   Stream<List<Receita>> streamFavoritos(String userId) {
     return _favoritos(userId)
-        .orderBy('favoritadaEm', descending: true)
+        .orderBy('favoritadoEm', descending: true)
         .snapshots()
         .map((snapshot) =>
             snapshot.docs.map((doc) => Receita.fromFirestore(doc)).toList());

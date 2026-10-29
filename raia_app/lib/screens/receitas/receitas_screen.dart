@@ -1,10 +1,8 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import 'package:raia_app/models/ingrediente.dart';
 import 'package:raia_app/services/auth_service.dart';
 import 'package:raia_app/services/ingrediente_service.dart';
-//import 'package:raia_app/config/api_config.dart'; //descomente para rodar app
+import 'package:raia_app/services/receita_local_service.dart';
 
 import '../../models/receita.dart';
 import 'receitas_favoritas_screen.dart'; 
@@ -18,11 +16,11 @@ class ReceitasScreen extends StatefulWidget {
 }
 
 class _ReceitasScreenState extends State<ReceitasScreen> {
-    static const String _endpointReceitasSugeridas =
-        'http://localhost:5000/sugerir';
-  //static String get _endpointReceitasSugeridas =>
-      //'http://localhost:5000/sugerir';
-      //'${ApiConfig.baseUrl}/sugerir'; //descomente para rodar app
+  // As receitas vêm do arquivo assets/receitas_pt.json (gerado uma vez por
+  // IA/gerar_receitas_pt.py). Não precisa mais do servidor Flask aqui.
+  final _receitaLocalService = ReceitaLocalService();
+  List<ReceitaLocal> _base = [];
+  List<Ingrediente> _estoque = [];
 
   final TextEditingController _buscaController = TextEditingController();
   final _authService = AuthService();
@@ -52,14 +50,14 @@ class _ReceitasScreenState extends State<ReceitasScreen> {
     });
   }
 
+  /// A busca procura em TODAS as receitas do arquivo (não só nas
+  /// sugestões): nome, categoria, país ou ingrediente.
   void _filtrar() {
-    final termo = _buscaController.text.trim().toLowerCase();
+    final termo = _buscaController.text.trim();
     setState(() {
       _receitasFiltradas = termo.isEmpty
           ? _todasReceitas
-          : _todasReceitas
-              .where((r) => r.nome.toLowerCase().contains(termo))
-              .toList();
+          : _receitaLocalService.buscar(_base, termo, _estoque);
     });
   }
 
@@ -69,40 +67,16 @@ class _ReceitasScreenState extends State<ReceitasScreen> {
       throw Exception('Usuário não autenticado.');
     }
 
-    final ingredientes = await _ingredienteService.listarUmaVez(user.uid);
-    final nomes = ingredientes.map((ingrediente) => ingrediente.nome).toList();
-
-    if (nomes.isEmpty) {
-      return [];
-    }
-    if (_endpointReceitasSugeridas.isEmpty) {
-      throw Exception('Endpoint do backend não configurado.');
-    }
-    final resposta = await http
-        .post(
-          Uri.parse(_endpointReceitasSugeridas),
-          headers: {'Content-Type': 'application/json'},
-          body: jsonEncode({'ingredientes': nomes}),
-        )
-        // O backend faz várias traduções em sequência por receita, o que
-        // pode levar bem mais que alguns segundos. 60s é um valor
-        // generoso pra evitar falso-timeout; o ideal a longo prazo é
-        // deixar o backend mais rápido (ver IA/backend.py), não só
-        // esperar mais tempo por ele.
-        .timeout(const Duration(seconds: 60));
-
-    if (resposta.statusCode != 200) {
+    _base = await _receitaLocalService.carregar();
+    if (_base.isEmpty) {
       throw Exception(
-        'Falha ao buscar receitas sugeridas (status ${resposta.statusCode}).',
+        'O arquivo de receitas ainda não foi gerado.\n'
+        'Rode "python gerar_receitas_pt.py" na pasta IA e depois rode o app de novo.',
       );
     }
 
-    final json = jsonDecode(resposta.body);
-    final lista = (json['receitas'] as List)
-        .map((r) => Receita.fromJson(r as Map<String, dynamic>))
-        .toList();
-
-    return lista;
+    _estoque = await _ingredienteService.listarUmaVez(user.uid);
+    return _receitaLocalService.sugerir(_base, _estoque);
   }
 
   @override
@@ -167,7 +141,7 @@ class _ReceitasScreenState extends State<ReceitasScreen> {
                           CircularProgressIndicator(),
                           SizedBox(height: 16),
                           Text(
-                            "Buscando e traduzindo receitas...\nIsso pode levar um minuto.",
+                            "Carregando receitas...",
                             textAlign: TextAlign.center,
                             style: TextStyle(color: Colors.grey),
                           ),
@@ -181,7 +155,8 @@ class _ReceitasScreenState extends State<ReceitasScreen> {
                   }
 
                   final receitas = snapshot.data ?? [];
-                  if (receitas.isEmpty) {
+                  if (receitas.isEmpty &&
+                      _buscaController.text.trim().isEmpty) {
                     return _buildEstadoVazio();
                   }
 
@@ -323,7 +298,7 @@ class _ReceitasScreenState extends State<ReceitasScreen> {
             const Icon(Icons.kitchen, size: 48, color: Colors.grey),
             const SizedBox(height: 12),
             const Text(
-              "Nenhuma sugestão ainda.\nAdicione ingredientes ao seu estoque para receber sugestões.",
+              "Nenhuma receita usa os itens do seu estoque.\nAdicione ingredientes ou use a busca acima (ex.: \"frango\", \"bolo\").",
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 16),

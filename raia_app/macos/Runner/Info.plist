@@ -28,6 +28,8 @@
 	<string>MainMenu</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<key>NSCameraUsageDescription</key>
+	<string>O RAIA usa a câmera para ler o QR code ou o código de barras dos produtos.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>O RAIA usa o microfone para você adicionar ou remover alimentos do estoque falando.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>

@@ -6,7 +6,6 @@ import 'package:raia_app/db.dart';
 import 'firebase_options.dart';
 import 'screens/main_screen.dart';
 
-// auth
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/cadastro_screen.dart';
 import 'screens/auth/esqueci_senha_screen.dart';
@@ -17,9 +16,6 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // No Flutter Web, a conexao padrao do Firestore (WebChannel) as vezes e
-  // bloqueada por proxy/extensao/rede, causando o erro
-  // "unavailable: client is offline". Forcar long-polling contorna isso.
   if (kIsWeb) {
     db.settings = const Settings(
       persistenceEnabled: false,

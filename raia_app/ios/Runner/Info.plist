@@ -66,6 +66,10 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>O RAIA usa suas fotos para trocar a foto de perfil e para ler cupons fiscais e listas de compras.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>O RAIA usa a câmera para ler o QR code ou o código de barras dos produtos e para fotografar cupons fiscais e listas de compras.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>O RAIA usa o microfone para você adicionar ou remover alimentos do estoque falando.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>

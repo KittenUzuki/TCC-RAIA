@@ -7,15 +7,24 @@ class Receita {
   final List<String> ingredientesFaltando;
   final String modoPreparo;
 
+  /// Lista completa, já formatada: "Farinha de trigo (2 xícaras)".
+  final List<String> ingredientes;
+  final String categoria;
+  final String origem;
+
   Receita({
     required this.id,
     required this.nome,
     required this.imagem,
     required this.ingredientesFaltando,
     required this.modoPreparo,
+    this.ingredientes = const [],
+    this.categoria = '',
+    this.origem = '',
   });
 
-  /// Lê a receita que vem da API de sugestões.
+  /// Monta a receita a partir da resposta da API de sugestões (backend
+  /// Python / TheMealDB).
   factory Receita.fromJson(Map<String, dynamic> json) {
     return Receita(
       id: json['id'],
@@ -26,7 +35,8 @@ class Receita {
     );
   }
 
-  /// Lê uma receita favoritada, salva em `users/{uid}/favoritos/{id}`.
+  /// Monta a receita a partir de um documento salvo em
+  /// `users/{uid}/favoritos/{id}` (ver [FavoritoService]).
   factory Receita.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>? ?? {};
     return Receita(
@@ -34,20 +44,26 @@ class Receita {
       nome: data['nome'] ?? '',
       imagem: data['imagem'] ?? '',
       ingredientesFaltando:
-          List<String>.from(data['ingredientesFaltando'] ?? []),
+          List<String>.from(data['ingredientesFaltando'] ?? const []),
       modoPreparo: data['modoPreparo'] ?? '',
+      ingredientes: List<String>.from(data['ingredientes'] ?? const []),
+      categoria: data['categoria'] ?? '',
+      origem: data['origem'] ?? '',
     );
   }
 
-  /// Cópia da receita gravada ao favoritar (o id vira o ID do documento,
-  /// por isso não entra aqui). `favoritadaEm` ordena a lista de favoritas.
+  /// Snapshot salvo ao favoritar — guarda os dados da receita como estavam
+  /// no momento, já que ela vem de uma API externa.
   Map<String, dynamic> toFirestoreFavorito() {
     return {
       'nome': nome,
       'imagem': imagem,
       'ingredientesFaltando': ingredientesFaltando,
       'modoPreparo': modoPreparo,
-      'favoritadaEm': Timestamp.now(),
+      'ingredientes': ingredientes,
+      'categoria': categoria,
+      'origem': origem,
+      'favoritadoEm': FieldValue.serverTimestamp(),
     };
   }
 }

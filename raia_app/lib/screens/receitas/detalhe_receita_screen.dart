@@ -36,6 +36,15 @@ class _DetalheReceitaScreenState extends State<DetalheReceitaScreen> {
     }
   }
 
+  String get _subtitulo => [receita.categoria, receita.origem]
+      .where((t) => t.isNotEmpty)
+      .join(' • ');
+
+  /// A linha é "Nome (medida)"; o ingrediente falta se o nome está na lista
+  /// de faltando.
+  bool _falta(String linha) => receita.ingredientesFaltando
+      .any((f) => linha == f || linha.startsWith('$f ('));
+
   Future<void> _alternarFavorito(bool jaEFavorita) async {
     final user = _authService.usuarioAtual;
     if (user == null) return;
@@ -146,32 +155,70 @@ class _DetalheReceitaScreenState extends State<DetalheReceitaScreen> {
                     const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
 
+              if (_subtitulo.isNotEmpty) ...[
+                const SizedBox(height: 6),
+                Text(
+                  _subtitulo,
+                  style: TextStyle(color: Colors.grey.shade700),
+                ),
+              ],
+
               const SizedBox(height: 25),
 
-              Text(
-                receita.ingredientesFaltando.isEmpty
-                    ? "Você já tem todos os ingredientes"
-                    : "Ingredientes que faltam",
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
+              if (receita.ingredientes.isNotEmpty) ...[
+                const Text(
+                  "Ingredientes",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
-              ),
-
-              const SizedBox(height: 10),
-
-              if (receita.ingredientesFaltando.isEmpty)
-                const ListTile(
-                  leading: Icon(Icons.check_circle, color: Colors.green),
-                  title: Text("Tudo certo para cozinhar!"),
-                )
-              else
-                ...receita.ingredientesFaltando.map(
-                  (item) => ListTile(
-                    leading: const Icon(Icons.shopping_cart_outlined),
-                    title: Text(item),
+                const SizedBox(height: 4),
+                Text(
+                  receita.ingredientesFaltando.isEmpty
+                      ? "Você já tem tudo para cozinhar!"
+                      : "Faltam ${receita.ingredientesFaltando.length} "
+                          "de ${receita.ingredientes.length} ingredientes",
+                  style: TextStyle(color: Colors.grey.shade700),
+                ),
+                const SizedBox(height: 6),
+                ...receita.ingredientes.map((linha) {
+                  final falta = _falta(linha);
+                  return ListTile(
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                    leading: Icon(
+                      falta
+                          ? Icons.shopping_cart_outlined
+                          : Icons.check_circle,
+                      color: falta ? Colors.orange.shade800 : Colors.green,
+                    ),
+                    title: Text(linha),
+                  );
+                }),
+              ] else ...[
+                Text(
+                  receita.ingredientesFaltando.isEmpty
+                      ? "Você já tem todos os ingredientes"
+                      : "Ingredientes que faltam",
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
+
+                const SizedBox(height: 10),
+
+                if (receita.ingredientesFaltando.isEmpty)
+                  const ListTile(
+                    leading: Icon(Icons.check_circle, color: Colors.green),
+                    title: Text("Tudo certo para cozinhar!"),
+                  )
+                else
+                  ...receita.ingredientesFaltando.map(
+                    (item) => ListTile(
+                      leading: const Icon(Icons.shopping_cart_outlined),
+                      title: Text(item),
+                    ),
+                  ),
+              ],
 
               const SizedBox(height: 20),
 
