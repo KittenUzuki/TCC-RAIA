@@ -2,43 +2,44 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:raia_app/db.dart';
 import 'package:raia_app/models/receita.dart';
 
-/// Encapsula o acesso aos favoritos do usuário.
-///
-/// Guardados como subcoleção `users/{uid}/favoritos/{receitaId}`, usando o
-/// próprio `id` da receita (o `idMeal` do TheMealDB) como ID do documento.
-/// Isso tem duas vantagens sobre uma coleção `favoritos` separada com um
-/// campo `userId`:
-///  - Saber se uma receita já está favoritada vira um `get()` direto por
-///    ID (rápido), em vez de uma query.
-///  - As regras de segurança ficam automáticas: quem já pode ler/escrever
-///    `users/{uid}` ganha acesso à subcoleção dele com uma única regra
-///    recursiva (ver firestore.rules).
-///
-/// Guardamos uma cópia (snapshot) dos dados da receita no momento em que
-/// foi favoritada — nome, imagem, modo de preparo — porque a receita vem
-/// de uma API externa (TheMealDB) e não existe em nenhuma coleção nossa
-/// pra "buscar de novo" depois.
+/// Encapsula o acesso às receitas favoritas, guardadas na subcoleção
+/// `users/{uid}/favoritos`. As telas não falam direto com o Firestore.
 class FavoritoService {
-  CollectionReference _colecao(String uid) =>
-      db.collection('users').doc(uid).collection('favoritos');
+  CollectionReference _favoritos(String userId) =>
+      db.collection('users').doc(userId).collection('favoritos');
 
-  Stream<List<Receita>> streamFavoritos(String uid) {
-    return _colecao(uid).orderBy('favoritadoEm', descending: true).snapshots().map(
-          (snap) => snap.docs.map((doc) => Receita.fromFirestore(doc)).toList(),
-        );
+  /// Todas as receitas favoritas do usuário, da mais recente pra mais antiga.
+  Stream<List<Receita>> streamFavoritos(String userId) {
+    return _favoritos(userId)
+        .orderBy('favoritadaEm', descending: true)
+        .snapshots()
+        .map((snapshot) =>
+            snapshot.docs.map((doc) => Receita.fromFirestore(doc)).toList());
   }
 
-  /// `true`/`false` em tempo real — usado pra pintar o coração da tela de
-  /// detalhe da receita sem precisar carregar a lista inteira de favoritos.
-  Stream<bool> streamEhFavorito(String uid, String receitaId) {
-    return _colecao(uid).doc(receitaId).snapshots().map((doc) => doc.exists);
+  /// Emite true/false conforme a receita seja (ou não) favorita.
+  /// Usado pra pintar o coração na tela de detalhe.
+  Stream<bool> streamEhFavorita(String userId, String receitaId) {
+    return _favoritos(userId)
+        .doc(receitaId)
+        .snapshots()
+        .map((doc) => doc.exists);
   }
 
-  Future<void> favoritar(String uid, Receita receita) {
-    return _colecao(uid).doc(receita.id).set(receita.toFirestoreFavorito());
+  Future<void> adicionar(String userId, Receita receita) {
+    return _favoritos(userId).doc(receita.id).set(receita.toFirestoreFavorito());
   }
 
-  Future<void> desfavoritar(String uid, String receitaId) {
-    return _colecao(uid).doc(receitaId).delete();
+  Future<void> remover(String userId, String receitaId) {
+    return _favoritos(userId).doc(receitaId).delete();
+  }
+
+  /// Apaga todos os favoritos do usuário. Usado ao excluir a conta
+  /// (o Firestore não apaga subcoleções sozinho quando o documento pai some).
+  Future<void> removerTodosDoUsuario(String userId) async {
+    final snapshot = await _favoritos(userId).get();
+    for (final doc in snapshot.docs) {
+      await doc.reference.delete();
+    }
   }
 }

@@ -9,8 +9,9 @@ service cloud.firestore {
       allow read, create, update, delete:
         if request.auth != null && request.auth.uid == userId;
 
-      // Favoritos do usuário: /users/{uid}/favoritos/{receitaId}
-      // Mesma regra do documento pai: só o dono do uid acessa.
+      // Receitas favoritas: /users/{uid}/favoritos/{idDaReceita}
+      // Subcoleções NÃO herdam a regra do documento pai, então precisa
+      // de um bloco próprio. Só o dono lê e escreve os próprios favoritos.
       match /favoritos/{receitaId} {
         allow read, create, update, delete:
           if request.auth != null && request.auth.uid == userId;
@@ -18,7 +19,6 @@ service cloud.firestore {
     }
 
     // Ingredientes: coleção de nível raiz. Cada documento carrega o campo `userId`.
-    // (Estrutura usada de fato pelo app: collection('ingredientes').add({... userId ...}))
     match /ingredientes/{docId} {
       // Leitura/consulta: só documentos do próprio usuário.
       allow read:
@@ -33,8 +33,6 @@ service cloud.firestore {
         if request.auth != null && resource.data.userId == request.auth.uid;
     }
 
-    // OBS: a coleção `receitas` (sugestões vindas da API de IA) não é lida/
-    // escrita pelo Firestore — ela vem direto do backend Flask via HTTP.
-    // Só os favoritos (acima, dentro de users/{uid}/favoritos) usam o Firestore.
+    // Qualquer outra coleção fica bloqueada por padrão (default-deny).
   }
 }

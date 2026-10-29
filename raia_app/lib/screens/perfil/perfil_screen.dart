@@ -4,6 +4,7 @@ import 'package:raia_app/screens/auth/login_screen.dart';
 import 'package:raia_app/services/auth_service.dart';
 import 'package:raia_app/services/ingrediente_service.dart';
 import 'package:raia_app/services/user_service.dart';
+import 'package:raia_app/services/favorito_service.dart';
 
 class PerfilScreen extends StatefulWidget {
   @override
@@ -15,6 +16,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
   final _userService = UserService();
   final _ingredienteService = IngredienteService();
   final _picker = ImagePicker();
+  final _favoritoService = FavoritoService();
 
   bool _isLoading = true;
   bool _enviandoFoto = false;
@@ -192,6 +194,7 @@ class _PerfilScreenState extends State<PerfilScreen> {
       // excluir a conta, porque depois de excluída as regras não
       // autorizam mais esse uid.
       await _ingredienteService.removerTodosDoUsuario(user.uid);
+      await _favoritoService.removerTodosDoUsuario(user.uid);
       await _userService.excluirArquivoFoto(user.uid);
       await _userService.excluirPerfil(user.uid);
       await _authService.excluirConta();

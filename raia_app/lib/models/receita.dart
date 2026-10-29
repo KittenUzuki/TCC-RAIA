@@ -15,8 +15,7 @@ class Receita {
     required this.modoPreparo,
   });
 
-  /// Monta a receita a partir da resposta da API de sugestões (backend
-  /// Python / TheMealDB).
+  /// Lê a receita que vem da API de sugestões.
   factory Receita.fromJson(Map<String, dynamic> json) {
     return Receita(
       id: json['id'],
@@ -27,8 +26,7 @@ class Receita {
     );
   }
 
-  /// Monta a receita a partir de um documento salvo em
-  /// `users/{uid}/favoritos/{id}` (ver [FavoritoService]).
+  /// Lê uma receita favoritada, salva em `users/{uid}/favoritos/{id}`.
   factory Receita.fromFirestore(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>? ?? {};
     return Receita(
@@ -36,20 +34,20 @@ class Receita {
       nome: data['nome'] ?? '',
       imagem: data['imagem'] ?? '',
       ingredientesFaltando:
-          List<String>.from(data['ingredientesFaltando'] ?? const []),
+          List<String>.from(data['ingredientesFaltando'] ?? []),
       modoPreparo: data['modoPreparo'] ?? '',
     );
   }
 
-  /// Snapshot salvo ao favoritar — guarda os dados da receita como estavam
-  /// no momento, já que ela vem de uma API externa.
+  /// Cópia da receita gravada ao favoritar (o id vira o ID do documento,
+  /// por isso não entra aqui). `favoritadaEm` ordena a lista de favoritas.
   Map<String, dynamic> toFirestoreFavorito() {
     return {
       'nome': nome,
       'imagem': imagem,
       'ingredientesFaltando': ingredientesFaltando,
       'modoPreparo': modoPreparo,
-      'favoritadoEm': FieldValue.serverTimestamp(),
+      'favoritadaEm': Timestamp.now(),
     };
   }
 }

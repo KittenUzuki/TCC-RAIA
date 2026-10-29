@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:raia_app/services/auth_service.dart';
+import 'package:raia_app/services/favorito_service.dart';
 
 import '../../models/receita.dart';
-import '../../services/auth_service.dart';
-import '../../services/favorito_service.dart';
 
 class DetalheReceitaScreen extends StatefulWidget {
   final Receita receita;
@@ -20,10 +20,57 @@ class _DetalheReceitaScreenState extends State<DetalheReceitaScreen> {
   final _authService = AuthService();
   final _favoritoService = FavoritoService();
 
-  bool _processando = false;
+  // Criado uma vez só (e não dentro do build) pra o StreamBuilder não
+  // reassinar o stream a cada rebuild da tela.
+  Stream<bool>? _favoritaStream;
+
+  Receita get receita => widget.receita;
+
+  @override
+  void initState() {
+    super.initState();
+    final user = _authService.usuarioAtual;
+    if (user != null) {
+      _favoritaStream =
+          _favoritoService.streamEhFavorita(user.uid, receita.id);
+    }
+  }
+
+  Future<void> _alternarFavorito(bool jaEFavorita) async {
+    final user = _authService.usuarioAtual;
+    if (user == null) return;
+
+    try {
+      if (jaEFavorita) {
+        await _favoritoService.remover(user.uid, receita.id);
+      } else {
+        await _favoritoService.adicionar(user.uid, receita);
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(jaEFavorita
+                ? 'Removida dos favoritos.'
+                : 'Adicionada aos favoritos!'),
+            duration: const Duration(seconds: 2),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Não foi possível atualizar os favoritos: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
 
   List<String> get _passosPreparo {
-    final texto = widget.receita.modoPreparo.trim();
+    final texto = receita.modoPreparo.trim();
     if (texto.isEmpty) return [];
 
     final linhas = texto
@@ -35,59 +82,41 @@ class _DetalheReceitaScreenState extends State<DetalheReceitaScreen> {
     return linhas.isNotEmpty ? linhas : [texto];
   }
 
-  Future<void> _alternarFavorito(bool jaEhFavorito) async {
-    final uid = _authService.usuarioAtual?.uid;
-    if (uid == null || _processando) return;
-
-    setState(() => _processando = true);
-    try {
-      if (jaEhFavorito) {
-        await _favoritoService.desfavoritar(uid, widget.receita.id);
-      } else {
-        await _favoritoService.favoritar(uid, widget.receita);
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Não foi possível atualizar os favoritos.')),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _processando = false);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final largura = MediaQuery.of(context).size.width;
-    final uid = _authService.usuarioAtual?.uid;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF5F2EE),
       appBar: AppBar(
-        title: Text(widget.receita.nome),
+        title: Text(receita.nome),
         backgroundColor: Colors.transparent,
         elevation: 0,
         foregroundColor: Colors.black,
         actions: [
-          if (uid == null)
-            const SizedBox.shrink()
-          else
-            StreamBuilder<bool>(
-              stream: _favoritoService.streamEhFavorito(uid, widget.receita.id),
-              builder: (context, snapshot) {
-                final ehFavorito = snapshot.data ?? false;
-                return IconButton(
-                  icon: Icon(
-                    ehFavorito ? Icons.favorite : Icons.favorite_border,
-                    color: ehFavorito ? Colors.red : null,
-                  ),
-                  onPressed: _processando
-                      ? null
-                      : () => _alternarFavorito(ehFavorito),
-                );
-              },
-            ),
+          StreamBuilder<bool>(
+            stream: _favoritaStream,
+            builder: (context, snapshot) {
+              final ehFavorita = snapshot.data ?? false;
+              final carregando =
+                  snapshot.connectionState == ConnectionState.waiting;
+
+              return IconButton(
+                tooltip: ehFavorita
+                    ? 'Remover dos favoritos'
+                    : 'Adicionar aos favoritos',
+                icon: Icon(
+                  ehFavorita ? Icons.favorite : Icons.favorite_border,
+                  color: ehFavorita ? Colors.red : null,
+                ),
+                // Desabilitado se não há usuário logado ou enquanto ainda
+                // não sabemos se a receita já é favorita.
+                onPressed: (_favoritaStream == null || carregando)
+                    ? null
+                    : () => _alternarFavorito(ehFavorita),
+              );
+            },
+          ),
         ],
       ),
       body: SingleChildScrollView(
@@ -96,11 +125,11 @@ class _DetalheReceitaScreenState extends State<DetalheReceitaScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (widget.receita.imagem.isNotEmpty)
+              if (receita.imagem.isNotEmpty)
                 ClipRRect(
                   borderRadius: BorderRadius.circular(16),
                   child: Image.network(
-                    widget.receita.imagem,
+                    receita.imagem,
                     width: double.infinity,
                     height: 200,
                     fit: BoxFit.cover,
@@ -109,10 +138,10 @@ class _DetalheReceitaScreenState extends State<DetalheReceitaScreen> {
                   ),
                 ),
 
-              if (widget.receita.imagem.isNotEmpty) const SizedBox(height: 16),
+              if (receita.imagem.isNotEmpty) const SizedBox(height: 16),
 
               Text(
-                widget.receita.nome,
+                receita.nome,
                 style:
                     const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
@@ -120,7 +149,7 @@ class _DetalheReceitaScreenState extends State<DetalheReceitaScreen> {
               const SizedBox(height: 25),
 
               Text(
-                widget.receita.ingredientesFaltando.isEmpty
+                receita.ingredientesFaltando.isEmpty
                     ? "Você já tem todos os ingredientes"
                     : "Ingredientes que faltam",
                 style: const TextStyle(
@@ -131,13 +160,13 @@ class _DetalheReceitaScreenState extends State<DetalheReceitaScreen> {
 
               const SizedBox(height: 10),
 
-              if (widget.receita.ingredientesFaltando.isEmpty)
+              if (receita.ingredientesFaltando.isEmpty)
                 const ListTile(
                   leading: Icon(Icons.check_circle, color: Colors.green),
                   title: Text("Tudo certo para cozinhar!"),
                 )
               else
-                ...widget.receita.ingredientesFaltando.map(
+                ...receita.ingredientesFaltando.map(
                   (item) => ListTile(
                     leading: const Icon(Icons.shopping_cart_outlined),
                     title: Text(item),

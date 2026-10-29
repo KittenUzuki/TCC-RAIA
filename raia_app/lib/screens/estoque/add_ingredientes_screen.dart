@@ -6,9 +6,10 @@ import 'package:raia_app/services/ingrediente_service.dart';
 
 class AddIngredientesScreen extends StatefulWidget {
   final Ingrediente? ingrediente; // Ingrediente para edição
+  final String? nomeInicial; // Nome pré-preenchido (ex.: vindo do QR code)
 
-  const AddIngredientesScreen({Key? key, this.ingrediente}) : super(key: key);
-
+  const AddIngredientesScreen({Key? key, this.ingrediente, this.nomeInicial})
+      : super(key: key);
   @override
   _AddIngredientesScreenState createState() => _AddIngredientesScreenState();
 }
@@ -40,6 +41,8 @@ class _AddIngredientesScreenState extends State<AddIngredientesScreen> {
       _quantidadeController.text = _formatarQuantidadeParaEdicao(ingrediente.quantidade);
       _unidadeSelecionada = ingrediente.unidade;
       _dataValidade = ingrediente.validade;
+    } else if (widget.nomeInicial != null) {
+      _nomeController.text = widget.nomeInicial!;
     }
   }
 
@@ -211,3 +214,5 @@ class _AddIngredientesScreenState extends State<AddIngredientesScreen> {
     );
   }
 }
+
+

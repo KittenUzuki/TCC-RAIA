@@ -162,11 +162,7 @@ def sugerir_receitas(request):
 
     ids_para_processar = list(candidatas_ids)[:MAX_RECEITAS]
 
-    # AQUI está o ganho principal: processar as receitas (busca + tradução)
-    # em paralelo em vez de uma atrás da outra. Antes: até 6 receitas x
-    # (1 busca + 3 traduções) em sequência. Agora: as 6 rodam ao mesmo
-    # tempo, então o tempo total fica perto do tempo da MAIS LENTA, não da
-    # SOMA de todas.
+    
     resultados = []
     with ThreadPoolExecutor(max_workers=max(1, len(ids_para_processar))) as executor:
         futures = [
